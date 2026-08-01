@@ -1,24 +1,75 @@
 import { ResponsiveContainer } from 'recharts'
+import { useEffect, useRef, useState } from 'react'
 
-/**
- * Consistent card shell for every chart in the app.
- * title/subtitle sit above the chart; actions (e.g. a period toggle) sit top-right.
- * height controls the ResponsiveContainer height (default 280px).
- */
-export default function ChartWrapper({ title, subtitle, actions, height = 280, children }) {
+export default function ChartWrapper({
+  title,
+  subtitle,
+  actions,
+  height = 280,
+  children,
+}) {
+  const containerRef = useRef(null)
+  const [visible, setVisible] = useState(false)
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setVisible(true)
+          observer.disconnect() // animate only once
+        }
+      },
+      {
+        threshold: 0.25, // 25% visible
+      }
+    )
+
+    if (containerRef.current) {
+      observer.observe(containerRef.current)
+    }
+
+    return () => observer.disconnect()
+  }, [])
+
   return (
-    <div className="rounded-xl border border-border-subtle bg-surface-raised p-5">
+    <div
+      ref={containerRef}
+      className="rounded-xl border border-border-subtle bg-surface-raised p-5"
+    >
       <div className="mb-4 flex items-start justify-between">
         <div>
           <h3 className="text-sm font-semibold text-brand-950">{title}</h3>
-          {subtitle && <p className="mt-0.5 text-xs text-brand-400">{subtitle}</p>}
+          {subtitle && (
+            <p className="mt-0.5 text-xs text-brand-400">
+              {subtitle}
+            </p>
+          )}
         </div>
-        {actions && <div className="flex items-center gap-2">{actions}</div>}
+
+        {actions && (
+          <div className="flex items-center gap-2">
+            {actions}
+          </div>
+        )}
       </div>
 
-      <ResponsiveContainer width="100%" height={height}>
-        {children}
-      </ResponsiveContainer>
+      <div className={`transition-all duration-700 ${
+          visible
+            ? 'opacity-100 translate-y-0'
+            : 'opacity-0 translate-y-6'
+        }`}
+      >
+        {visible ? (
+          <ResponsiveContainer width="100%" height={height}>
+            {children}
+          </ResponsiveContainer>
+        ) : (
+          <div
+            style={{ height }}
+            className="animate-pulse rounded-md bg-brand-800/8"
+          />
+        )}
+      </div>
     </div>
   )
 }
