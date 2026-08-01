@@ -10,6 +10,8 @@ import StatusBadge from '../../components/badge/StatusBadge'
 import ChartWrapper from '../../components/charts/ChartWrapper'
 import TableFilterBar from '../../components/table/TableFilterBar'
 import DataTable from '../../components/table/DataTable'
+import { KpiCardSkeleton, ChartSkeleton, TableSkeleton } from '../../components/ui/Skeleton'
+import { useDelayedLoading } from '../../lib/useDelayedLoading'
 import { filterRows } from '../../lib/sorting'
 import { formatCurrency, formatPercent } from '../../lib/formatters'
 import { targets, targetsKpis, branchAchievement } from '../../data/targets.data'
@@ -19,6 +21,7 @@ const STATUS_TONE = { 'On Track': 'positive', Behind: 'negative', Exceeded: 'pos
 const gaugeData = [{ name: 'Company', value: targetsKpis.companyPct, fill: '#4f46e5' }]
 
 export default function TargetsPage() {
+  const isLoading = useDelayedLoading(500)
   const [search, setSearch] = useState('')
   const [branchFilter, setBranchFilter] = useState('All')
   const [statusFilter, setStatusFilter] = useState('All')
@@ -47,6 +50,21 @@ export default function TargetsPage() {
       render: (r) => <StatusBadge status={STATUS_TONE[r.status]}>{r.status}</StatusBadge>,
     },
   ]
+
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {Array.from({ length: 4 }).map((_, i) => <KpiCardSkeleton key={i} />)}
+        </div>
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+          <div className="lg:col-span-2"><ChartSkeleton /></div>
+          <ChartSkeleton height={280} />
+        </div>
+        <TableSkeleton rows={7} />
+      </div>
+    )
+  }
 
   return (
     <div className="space-y-6">
