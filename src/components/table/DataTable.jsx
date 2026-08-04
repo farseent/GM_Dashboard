@@ -43,7 +43,7 @@ export default function DataTable({ columns, rows, pageSize = 10, emptyLabel = '
                 <th
                   key={col.key}
                   className={clsx(
-                    'px-4 py-3 text-xs font-semibold uppercase tracking-wide text-brand-500',
+                    'px-4 py-3 text-xs font-semibold uppercase tracking-wide text-fg-muted',
                     col.align === 'right' ? 'text-right' : 'text-left'
                   )}
                 >
@@ -51,7 +51,7 @@ export default function DataTable({ columns, rows, pageSize = 10, emptyLabel = '
                     <button
                       onClick={() => handleSort(col.key)}
                       className={clsx(
-                        'inline-flex items-center gap-1 hover:text-brand-950',
+                        'inline-flex items-center gap-1 hover:text-fg',
                         col.align === 'right' && 'flex-row-reverse'
                       )}
                     >
@@ -63,7 +63,7 @@ export default function DataTable({ columns, rows, pageSize = 10, emptyLabel = '
                           <ArrowDown className="h-3 w-3" />
                         )
                       ) : (
-                        <ChevronsUpDown className="h-3 w-3 text-brand-400/60" />
+                        <ChevronsUpDown className="h-3 w-3 text-fg-subtle/60" />
                       )}
                     </button>
                   ) : (
@@ -76,7 +76,7 @@ export default function DataTable({ columns, rows, pageSize = 10, emptyLabel = '
           <tbody>
             {paginated.length === 0 ? (
               <tr>
-                <td colSpan={columns.length} className="px-4 py-10 text-center text-sm text-brand-400">
+                <td colSpan={columns.length} className="px-4 py-10 text-center text-sm text-fg-subtle">
                   {emptyLabel}
                 </td>
               </tr>
@@ -90,7 +90,7 @@ export default function DataTable({ columns, rows, pageSize = 10, emptyLabel = '
                     <td
                       key={col.key}
                       className={clsx(
-                        'px-4 py-3 text-brand-950',
+                        'px-4 py-3 text-fg',
                         col.align === 'right' && 'text-right'
                       )}
                     >
@@ -105,7 +105,7 @@ export default function DataTable({ columns, rows, pageSize = 10, emptyLabel = '
       </div>
 
       {sorted.length > 0 && (
-        <div className="flex items-center justify-between border-t border-border-subtle px-4 py-3 text-xs text-brand-500">
+        <div className="flex items-center justify-between border-t border-border-subtle px-4 py-3 text-xs text-fg-muted">
           <span>
             Showing {(currentPage - 1) * pageSize + 1}–{Math.min(currentPage * pageSize, sorted.length)} of{' '}
             {sorted.length}

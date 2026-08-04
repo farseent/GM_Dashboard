@@ -1,5 +1,7 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 @theme {
   /* Brand — deep slate/indigo, deliberately not the generic cream+terracotta
      or dark+neon defaults. Reads as a serious financial ops tool. */
@@ -34,7 +36,11 @@
   --color-surface: #f7f8fa;
   --color-surface-raised: #ffffff;
   --color-border-subtle: #e5e8ee;
-
+ 
+  --color-fg: #0b1220;         /* primary text — was text-brand-950 */
+  --color-fg-muted: #3d5580;   /* secondary text/labels — was text-brand-500 */
+  --color-fg-subtle: #6b84a8;  /* tertiary/caption text — was text-brand-400 */
+ 
   --font-display: "Inter", ui-sans-serif, system-ui, sans-serif;
   --font-body: "Inter", ui-sans-serif, system-ui, sans-serif;
   --font-mono: "IBM Plex Mono", ui-monospace, monospace;
@@ -42,6 +48,27 @@
   --radius-card: 0.75rem;
 }
 
+/* Dark mode overrides — only the theme-aware tokens change.
+   --color-brand-* is intentionally absent here: the sidebar stays fixed-dark
+   in both themes, so its tokens must not be touched. */
+.dark {
+  --color-surface: #0c1220;
+  --color-surface-raised: #121a2c;
+  --color-border-subtle: #232d42;
+ 
+  --color-fg: #f1f4f9;
+  --color-fg-muted: #9db0cc;
+  --color-fg-subtle: #6b7d9c;
+ 
+  /* Status colors get slightly lifted for contrast against dark surfaces */
+  --color-positive-100: #113322;
+  --color-positive-50: #0d2819;
+  --color-negative-100: #3a1616;
+  --color-negative-50: #2a1010;
+  --color-warning-100: #3a2a0c;
+  --color-warning-50: #2a1e08;
+}
+ 
 html {
   font-family: var(--font-body);
 }

@@ -1,7 +1,7 @@
 import clsx from 'clsx'
 
 function Pulse({ className }) {
-  return <div className={clsx('animate-pulse rounded-md bg-brand-800/8', className)} />
+  return <div className={clsx('animate-pulse rounded-md bg-fg/8', className)} />
 }
 
 export function KpiCardSkeleton() {

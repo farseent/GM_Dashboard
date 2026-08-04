@@ -148,7 +148,7 @@ export default function ReceiptsPage() {
 
       {/* Table */}
       <div>
-        <h3 className="mb-3 text-sm font-semibold text-brand-950">Transaction Log</h3>
+        <h3 className="mb-3 text-sm font-semibold text-fg">Transaction Log</h3>
         <TableFilterBar
           search={search}
           onSearchChange={setSearch}

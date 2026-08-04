@@ -38,9 +38,9 @@ export default function ChartWrapper({
     >
       <div className="mb-4 flex items-start justify-between">
         <div>
-          <h3 className="text-sm font-semibold text-brand-950">{title}</h3>
+          <h3 className="text-sm font-semibold text-fg">{title}</h3>
           {subtitle && (
-            <p className="mt-0.5 text-xs text-brand-400">
+            <p className="mt-0.5 text-xs text-fg-subtle">
               {subtitle}
             </p>
           )}

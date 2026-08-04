@@ -110,7 +110,7 @@ export default function ExpensesPage() {
           subtext="vs last month"
         />
       </div>
-
+ 
       {/* Charts */}
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
         <div className="lg:col-span-2">
@@ -127,7 +127,7 @@ export default function ExpensesPage() {
             </BarChart>
           </ChartWrapper>
         </div>
-
+ 
         <ChartWrapper title="Category Share" subtitle="Of total spend">
           <PieChart>
             <Pie data={categoryShare} dataKey="value" nameKey="name" innerRadius={50} outerRadius={78} paddingAngle={2}>
@@ -139,7 +139,7 @@ export default function ExpensesPage() {
           </PieChart>
         </ChartWrapper>
       </div>
-
+ 
       <ChartWrapper title="Expense Trend" subtitle="Last 6 months — spot the spikes" height={240}>
         <LineChart data={expenseTrend}>
           <CartesianGrid strokeDasharray="3 3" stroke="#e5e8ee" vertical={false} />
@@ -149,10 +149,10 @@ export default function ExpensesPage() {
           <Line type="monotone" dataKey="value" stroke="#ef4444" strokeWidth={2.5} dot={{ r: 3 }} />
         </LineChart>
       </ChartWrapper>
-
+ 
       {/* Table */}
       <div>
-        <h3 className="mb-3 text-sm font-semibold text-brand-950">Expense Log</h3>
+        <h3 className="mb-3 text-sm font-semibold text-fg">Expense Log</h3>
         <TableFilterBar
           search={search}
           onSearchChange={setSearch}

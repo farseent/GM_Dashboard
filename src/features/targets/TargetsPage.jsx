@@ -132,7 +132,7 @@ export default function TargetsPage() {
 
       {/* Leaderboard table */}
       <div>
-        <h3 className="mb-3 text-sm font-semibold text-brand-950">Leaderboard — Ranked by % Achieved</h3>
+        <h3 className="mb-3 text-sm font-semibold text-fg">Leaderboard — Ranked by % Achieved</h3>
         <TableFilterBar
           search={search}
           onSearchChange={setSearch}

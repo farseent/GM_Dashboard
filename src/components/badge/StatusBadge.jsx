@@ -4,14 +4,14 @@ const VARIANTS = {
   positive: 'bg-positive-100 text-positive-600',
   negative: 'bg-negative-100 text-negative-600',
   warning: 'bg-warning-100 text-warning-600',
-  neutral: 'bg-brand-800/5 text-brand-500',
+  neutral: 'bg-fg/5 text-fg-muted',
 }
 
 const DOT_VARIANTS = {
   positive: 'bg-positive-500',
   negative: 'bg-negative-500',
   warning: 'bg-warning-500',
-  neutral: 'bg-brand-400',
+  neutral: 'bg-fg-subtle',
 }
 
 /**

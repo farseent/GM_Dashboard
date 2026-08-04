@@ -108,7 +108,7 @@ export default function ProductsPage() {
           trend={{ direction: 'down', value: formatPercent(toursKpis.avgCancellation), tone: 'warning' }}
         />
       </div>
-
+ 
       {/* Charts */}
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
         <div className="lg:col-span-2">
@@ -122,7 +122,7 @@ export default function ProductsPage() {
             </BarChart>
           </ChartWrapper>
         </div>
-
+ 
         <ChartWrapper title="Revenue Share by Category" subtitle="This period">
           <PieChart>
             <Pie data={revenueShareByCategory} dataKey="value" nameKey="name" innerRadius={50} outerRadius={78} paddingAngle={2}>
@@ -134,7 +134,7 @@ export default function ProductsPage() {
           </PieChart>
         </ChartWrapper>
       </div>
-
+ 
       <ChartWrapper title="Revenue vs Profit per Tour" subtitle="Top 8 by revenue" height={280}>
         <BarChart data={revenueProfitByTour}>
           <CartesianGrid strokeDasharray="3 3" stroke="#e5e8ee" vertical={false} />
@@ -146,10 +146,10 @@ export default function ProductsPage() {
           <Bar dataKey="profit" name="Profit" fill="#22c55e" radius={[6, 6, 0, 0]} />
         </BarChart>
       </ChartWrapper>
-
+ 
       {/* Table */}
       <div>
-        <h3 className="mb-3 text-sm font-semibold text-brand-950">All Tours</h3>
+        <h3 className="mb-3 text-sm font-semibold text-fg">All Tours</h3>
         <TableFilterBar
           search={search}
           onSearchChange={setSearch}

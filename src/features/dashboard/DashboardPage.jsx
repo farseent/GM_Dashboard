@@ -144,17 +144,17 @@ export default function DashboardPage() {
             <div className="rounded-lg bg-warning-500/10 p-2">
               <Trophy className="h-4 w-4 text-warning-600" />
             </div>
-            <p className="text-sm font-medium text-brand-500">Top Performing Tour</p>
+            <p className="text-sm font-medium text-fg-muted">Top Performing Tour</p>
           </div>
-          <p className="mt-3 text-lg font-semibold text-brand-950">{topTour.name}</p>
+          <p className="mt-3 text-lg font-semibold text-fg">{topTour.name}</p>
           <div className="mt-4 space-y-2 text-sm">
             <div className="flex justify-between">
-              <span className="text-brand-500">Bookings</span>
-              <span className="font-medium text-brand-950">{topTour.bookings}</span>
+              <span className="text-fg-muted">Bookings</span>
+              <span className="font-medium text-fg">{topTour.bookings}</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-brand-500">Revenue</span>
-              <span className="font-medium text-brand-950">{formatCurrency(topTour.revenue)}</span>
+              <span className="text-fg-muted">Revenue</span>
+              <span className="font-medium text-fg">{formatCurrency(topTour.revenue)}</span>
             </div>
           </div>
         </div>
@@ -162,7 +162,7 @@ export default function DashboardPage() {
 
       {/* Branch summary table */}
       <div>
-        <h3 className="mb-3 text-sm font-semibold text-brand-950">Branch Performance Summary</h3>
+        <h3 className="mb-3 text-sm font-semibold text-fg">Branch Performance Summary</h3>
         <TableFilterBar
           search={search}
           onSearchChange={setSearch}

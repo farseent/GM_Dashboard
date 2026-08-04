@@ -87,15 +87,15 @@ export default function FinancialStatusPage() {
             <p className={`text-sm font-semibold ${isProfit ? 'text-positive-600' : 'text-negative-600'}`}>
               Company Status: {isProfit ? 'Profit' : 'Loss'}
             </p>
-            <p className="text-2xl font-semibold text-brand-950">{formatCurrency(financialKpis.netProfit)}</p>
+            <p className="text-2xl font-semibold text-fg">{formatCurrency(financialKpis.netProfit)}</p>
           </div>
         </div>
-        <div className="text-right text-sm text-brand-500">
+        <div className="text-right text-sm text-fg-muted">
           <p>Profit Margin</p>
-          <p className="text-lg font-semibold text-brand-950">{formatPercent(financialKpis.profitMargin)}</p>
+          <p className="text-lg font-semibold text-fg">{formatPercent(financialKpis.profitMargin)}</p>
         </div>
       </div>
-
+ 
       {/* KPI Cards */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <KpiCard label="Total Revenue" value={formatCurrency(financialKpis.totalRevenue)} icon={Wallet} subtext="this month" />
@@ -113,7 +113,7 @@ export default function FinancialStatusPage() {
           subtext="money owed"
         />
       </div>
-
+ 
       {/* Combo chart */}
       <ChartWrapper title="Revenue vs Expenses with Net Profit" subtitle="Last 6 months">
         <ComposedChart data={revenueExpenseProfit}>
@@ -127,7 +127,7 @@ export default function FinancialStatusPage() {
           <Line type="monotone" dataKey="profit" name="Net Profit" stroke="#16a34a" strokeWidth={2.5} dot={{ r: 3 }} />
         </ComposedChart>
       </ChartWrapper>
-
+ 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <ChartWrapper title="Branch Profit/Loss" subtitle="Worst to best performing">
           <BarChart data={branchProfitLoss} layout="vertical" margin={{ left: 20 }}>
@@ -142,7 +142,7 @@ export default function FinancialStatusPage() {
             </Bar>
           </BarChart>
         </ChartWrapper>
-
+ 
         <ChartWrapper title="Profit Margin Trend" subtitle="Last 6 months">
           <ComposedChart data={profitMarginTrend}>
             <CartesianGrid strokeDasharray="3 3" stroke="#e5e8ee" vertical={false} />
@@ -153,10 +153,10 @@ export default function FinancialStatusPage() {
           </ComposedChart>
         </ChartWrapper>
       </div>
-
+ 
       {/* Table */}
       <div>
-        <h3 className="mb-3 text-sm font-semibold text-brand-950">Branch Breakdown</h3>
+        <h3 className="mb-3 text-sm font-semibold text-fg">Branch Breakdown</h3>
         <TableFilterBar
           search={search}
           onSearchChange={setSearch}
