@@ -92,7 +92,7 @@ export default function Sidebar({ isExpanded, onExpand, onCollapse }) {
             isExpanded ? 'opacity-100' : 'opacity-0'
           )}
         >
-          <p className="text-[11px] text-brand-400">v0.1.0 · Mock data mode</p>
+          <p className="text-[11px] text-brand-400">v2.0.0 · Mock data mode</p>
         </div>
       </aside>
     </>
