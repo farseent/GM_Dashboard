@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router-dom'
-import { Compass, X } from 'lucide-react'
+import { Compass, Menu, X } from 'lucide-react'
 import { NAV_ITEMS } from '../constants/navigation'
 import clsx from 'clsx'
 
@@ -31,8 +31,12 @@ export default function Sidebar({ isExpanded, onExpand, onCollapse }) {
             className="flex items-center gap-2"
             aria-label="Expand sidebar"
           >
-            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-accent-500">
-              <Compass className="h-5 w-5 text-white" />
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg">
+              {isExpanded ? (
+                <Compass className="h-5 w-5 text-white" />
+              ) : (
+                <Menu className="h-5 w-5 text-white" />
+              )}
             </div>
             <div
               className={clsx(

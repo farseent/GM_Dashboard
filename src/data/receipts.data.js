@@ -14,13 +14,28 @@ function seededRow(i) {
   const isRefund = i % 9 === 0
   const isPending = !isRefund && i % 5 === 0
   const status = isRefund ? 'Refunded' : isPending ? 'Pending' : 'Paid'
-  const amount = 6000 + ((i * 733) % 24000)
+  const totalAmount = 6000 + ((i * 733) % 24000)
+
+  let paidAmount;
+  if (status === 'Paid') {
+    paidAmount = totalAmount
+  }
+  else if (status === 'Pending') {
+    paidAmount = Math.round(totalAmount * (0.3 + ((i * 13) % 50) / 100))
+  }
+  else {
+    paidAmount = 0
+  }
+  const balance = totalAmount - paidAmount
 
   return {
     id: 1000 + i,
-    bookingId: `BK-2026-${String(1000 + i).padStart(5, '0')}`,
+    clientId: `CL-2026-${String(1000 + i).padStart(5, '0')}`,
     customer: NAMES[i % NAMES.length],
-    amount,
+    phone: `9${String(100000000 + i * 87321).slice(0, 9)}`,
+    totalAmount,
+    paidAmount,
+    balance: totalAmount - paidAmount,
     method: METHODS[i % METHODS.length],
     tour: TOURS[i % TOURS.length],
     branch: BRANCHES[i % BRANCHES.length],
@@ -28,7 +43,7 @@ function seededRow(i) {
     date: `2026-0${(i % 6) + 1}-${String((i % 27) + 1).padStart(2, '0')}`,
     status,
     refundReason: isRefund ? ['Trip cancelled by customer', 'Duplicate payment', 'Weather cancellation'][i % 3] : null,
-    pendingDue: isPending ? Math.round(amount * 0.4) : 0,
+    // pendingDue: isPending ? Math.round(amount * 0.4) : 0,
   }
 }
 
@@ -38,7 +53,8 @@ export const receiptsKpis = {
   totalToday: 42000,
   totalThisWeek: 268000,
   totalThisMonth: 1245000,
-  totalRefunds: receipts.filter((r) => r.status === 'Refunded').reduce((s, r) => s + r.amount, 0),
+  totalRefunds: 52400,
+  // totalRefunds: receipts.filter((r) => r.status === 'Refunded').reduce((s, r) => s + r.balance, 0),
   netReceipts: receipts.reduce((s, r) => s + (r.status === 'Refunded' ? 0 : r.amount), 0),
 }
 

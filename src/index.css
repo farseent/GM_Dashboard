@@ -50,3 +50,16 @@ body {
   background-color: var(--color-surface);
   color: var(--color-brand-950);
 }
+
+/* Remove focus outline from Recharts */
+.recharts-wrapper:focus,
+.recharts-wrapper *:focus,
+.recharts-surface:focus,
+.recharts-surface *:focus {
+  outline: none !important;
+}
+
+.recharts-wrapper,
+.recharts-surface {
+  -webkit-tap-highlight-color: transparent;
+}

@@ -37,20 +37,23 @@ export default function ReceiptsPage() {
     () =>
       filterRows(receipts, {
         search,
-        searchKeys: ['customer', 'bookingId', 'tour'],
+        searchKeys: ['customer', 'clientId', 'phone'],
         fieldFilters: { branch: branchFilter, method: methodFilter, status: statusFilter },
       }),
     [search, branchFilter, methodFilter, statusFilter]
   )
 
   const columns = [
-    { key: 'bookingId', label: 'Booking ID', sortable: true },
+    { key: 'clientId', label: 'Client ID', sortable: true },
     { key: 'customer', label: 'Customer', sortable: true },
+    { key: 'phone', label: 'Phone', sortable: true },
     { key: 'tour', label: 'Tour', sortable: true },
     { key: 'branch', label: 'Branch', sortable: true },
-    { key: 'method', label: 'Method', sortable: true },
-    { key: 'amount', label: 'Amount', sortable: true, align: 'right', render: (r) => formatCurrency(r.amount) },
-    { key: 'date', label: 'Date', sortable: true, render: (r) => formatDate(r.date) },
+    // { key: 'method', label: 'Method', sortable: true },
+    { key: 'totalAmount', label: 'Total', sortable: true, align: 'right', render: (r) => formatCurrency(r.totalAmount),},
+    { key: 'paidAmount', label: 'Paid', sortable: true, align: 'right', render: (r) => formatCurrency(r.paidAmount),},
+    { key: 'balance', label: 'Balance', sortable: true, align: 'right', render: (r) => formatCurrency(r.balance),},
+    // { key: 'date', label: 'Date', sortable: true, render: (r) => formatDate(r.date) },
     {
       key: 'status',
       label: 'Status',
@@ -62,7 +65,7 @@ export default function ReceiptsPage() {
             <p className="mt-1 text-xs text-negative-600">{r.refundReason}</p>
           )}
           {r.status === 'Pending' && (
-            <p className="mt-1 text-xs text-warning-600">{formatCurrency(r.pendingDue)} due</p>
+            <p className="mt-1 text-xs text-warning-600">{formatCurrency(r.balance)} due</p>
           )}
         </div>
       ),
@@ -149,10 +152,10 @@ export default function ReceiptsPage() {
         <TableFilterBar
           search={search}
           onSearchChange={setSearch}
-          searchPlaceholder="Search customer, booking ID, or tour..."
+          searchPlaceholder="Search customer, customer ID, or phone..."
           filters={[
             { key: 'branch', label: 'Branch', options: ['Kochi', 'Bengaluru', 'Chennai', 'Coimbatore', 'Mysuru'] },
-            { key: 'method', label: 'Method', options: ['UPI', 'Cash', 'Card', 'Bank Transfer', 'Wallet'] },
+            // { key: 'method', label: 'Method', options: ['UPI', 'Cash', 'Card', 'Bank Transfer', 'Wallet'] },
             { key: 'status', label: 'Status', options: ['Paid', 'Pending', 'Refunded'] },
           ]}
           values={{ branch: branchFilter, method: methodFilter, status: statusFilter }}
