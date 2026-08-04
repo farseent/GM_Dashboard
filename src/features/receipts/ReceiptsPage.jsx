@@ -11,6 +11,7 @@ import StatusBadge from '../../components/badge/StatusBadge'
 import ChartWrapper from '../../components/charts/ChartWrapper'
 import TableFilterBar from '../../components/table/TableFilterBar'
 import DataTable from '../../components/table/DataTable'
+import ChartTooltip from '../../components/charts/ChartTooltip'
 import { KpiCardSkeleton, ChartSkeleton, TableSkeleton } from '../../components/ui/Skeleton'
 import { useDelayedLoading } from '../../lib/useDelayedLoading'
 import { filterRows } from '../../lib/sorting'
@@ -117,7 +118,7 @@ export default function ReceiptsPage() {
               <CartesianGrid strokeDasharray="3 3" stroke="#e5e8ee" vertical={false} />
               <XAxis dataKey="date" tick={{ fontSize: 12 }} stroke="#6b84a8" />
               <YAxis tick={{ fontSize: 12 }} stroke="#6b84a8" />
-              <Tooltip formatter={(v) => formatCurrency(v)} />
+              <ChartTooltip formatter={(v) => formatCurrency(v)} />
               <Area type="monotone" dataKey="value" stroke="#4f46e5" strokeWidth={2.5} fill="url(#revenueFill)" />
             </AreaChart>
           </ChartWrapper>
@@ -125,12 +126,12 @@ export default function ReceiptsPage() {
 
         <ChartWrapper title="Payment Type Split" subtitle="% of transactions">
           <PieChart>
-            <Pie data={paymentTypeSplit} dataKey="value" nameKey="name" innerRadius={55} outerRadius={80} paddingAngle={2}>
+            <Pie data={paymentTypeSplit} dataKey="value" nameKey="name" innerRadius={55} outerRadius={80} paddingAngle={2}  stroke="none">
               {paymentTypeSplit.map((_, i) => (
                 <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />
               ))}
             </Pie>
-            <Tooltip formatter={(v) => `${v}%`} />
+            <ChartTooltip formatter={(v) => `${v}%`} />
             <Legend wrapperStyle={{ fontSize: 11 }} />
           </PieChart>
         </ChartWrapper>
@@ -141,7 +142,7 @@ export default function ReceiptsPage() {
           <CartesianGrid strokeDasharray="3 3" stroke="#e5e8ee" vertical={false} />
           <XAxis dataKey="name" tick={{ fontSize: 11 }} stroke="#6b84a8" />
           <YAxis tick={{ fontSize: 12 }} stroke="#6b84a8" allowDecimals={false} />
-          <Tooltip />
+          <ChartTooltip />
           <Bar dataKey="bookings" fill="#22c55e" radius={[6, 6, 0, 0]} />
         </BarChart>
       </ChartWrapper>

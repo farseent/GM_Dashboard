@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import { Gauge, Trophy, AlertOctagon, IndianRupee } from 'lucide-react'
 import {
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend,
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Legend,
   RadialBarChart, RadialBar, PolarAngleAxis,
 } from 'recharts'
 
@@ -10,6 +10,7 @@ import StatusBadge from '../../components/badge/StatusBadge'
 import ChartWrapper from '../../components/charts/ChartWrapper'
 import TableFilterBar from '../../components/table/TableFilterBar'
 import DataTable from '../../components/table/DataTable'
+import ChartTooltip from '../../components/charts/ChartTooltip'
 import { KpiCardSkeleton, ChartSkeleton, TableSkeleton } from '../../components/ui/Skeleton'
 import { useDelayedLoading } from '../../lib/useDelayedLoading'
 import { filterRows } from '../../lib/sorting'
@@ -95,11 +96,11 @@ export default function TargetsPage() {
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
         <div className="lg:col-span-2">
           <ChartWrapper title="Achieved vs Target by Branch" subtitle="Jul 2026">
-            <BarChart data={branchAchievement} layout="vertical" margin={{ left: 20 }}>
+            <BarChart data={branchAchievement} layout="vertical" margin={{ left: 20 }} >
               <CartesianGrid strokeDasharray="3 3" stroke="#e5e8ee" horizontal={false} />
               <XAxis type="number" tick={{ fontSize: 12 }} stroke="#6b84a8" />
               <YAxis type="category" dataKey="name" tick={{ fontSize: 12 }} stroke="#6b84a8" width={90} />
-              <Tooltip formatter={(v) => formatCurrency(v)} />
+              <ChartTooltip formatter={(v) => formatCurrency(v)} />
               <Legend wrapperStyle={{ fontSize: 11 }} />
               <Bar dataKey="target" name="Target" fill="#cbd5e1" radius={[0, 6, 6, 0]} />
               <Bar dataKey="achieved" name="Achieved" fill="#4f46e5" radius={[0, 6, 6, 0]} />
@@ -114,6 +115,7 @@ export default function TargetsPage() {
             data={gaugeData}
             startAngle={90}
             endAngle={-270}
+            
           >
             <PolarAngleAxis type="number" domain={[0, 100]} tick={false} />
             <RadialBar dataKey="value" cornerRadius={12} background={{ fill: '#e5e8ee' }} />
@@ -122,7 +124,7 @@ export default function TargetsPage() {
               y="50%"
               textAnchor="middle"
               dominantBaseline="middle"
-              className="fill-brand-950 text-2xl font-semibold"
+              className="fill-fg text-2xl font-semibold"
             >
               {targetsKpis.companyPct}%
             </text>

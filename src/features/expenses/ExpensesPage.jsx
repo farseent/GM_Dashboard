@@ -10,6 +10,7 @@ import KpiCard from '../../components/kpi/KpiCard'
 import StatusBadge from '../../components/badge/StatusBadge'
 import ChartWrapper from '../../components/charts/ChartWrapper'
 import TableFilterBar from '../../components/table/TableFilterBar'
+import ChartTooltip from '../../components/charts/ChartTooltip'
 import DataTable from '../../components/table/DataTable'
 import { KpiCardSkeleton, ChartSkeleton, TableSkeleton } from '../../components/ui/Skeleton'
 import { filterRows } from '../../lib/sorting'
@@ -119,7 +120,7 @@ export default function ExpensesPage() {
               <CartesianGrid strokeDasharray="3 3" stroke="#e5e8ee" vertical={false} />
               <XAxis dataKey="month" tick={{ fontSize: 12 }} stroke="#6b84a8" />
               <YAxis tick={{ fontSize: 12 }} stroke="#6b84a8" />
-              <Tooltip formatter={(v) => formatCurrency(v)} />
+              <ChartTooltip formatter={(v) => formatCurrency(v)} />
               <Legend wrapperStyle={{ fontSize: 11 }} />
               {CATEGORY_KEYS.map((key, i) => (
                 <Bar key={key} dataKey={key} stackId="a" fill={STACK_COLORS[i]} radius={i === CATEGORY_KEYS.length - 1 ? [6, 6, 0, 0] : 0} />
@@ -130,12 +131,12 @@ export default function ExpensesPage() {
  
         <ChartWrapper title="Category Share" subtitle="Of total spend">
           <PieChart>
-            <Pie data={categoryShare} dataKey="value" nameKey="name" innerRadius={50} outerRadius={78} paddingAngle={2}>
+            <Pie data={categoryShare} dataKey="value" nameKey="name" innerRadius={50} outerRadius={78} paddingAngle={2}  stroke="none">
               {categoryShare.map((_, i) => (
                 <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />
               ))}
             </Pie>
-            <Tooltip formatter={(v) => formatCurrency(v)} />
+            <ChartTooltip formatter={(v) => formatCurrency(v)} />
           </PieChart>
         </ChartWrapper>
       </div>
@@ -145,7 +146,7 @@ export default function ExpensesPage() {
           <CartesianGrid strokeDasharray="3 3" stroke="#e5e8ee" vertical={false} />
           <XAxis dataKey="month" tick={{ fontSize: 12 }} stroke="#6b84a8" />
           <YAxis tick={{ fontSize: 12 }} stroke="#6b84a8" />
-          <Tooltip formatter={(v) => formatCurrency(v)} />
+          <ChartTooltip formatter={(v) => formatCurrency(v)} />
           <Line type="monotone" dataKey="value" stroke="#ef4444" strokeWidth={2.5} dot={{ r: 3 }} />
         </LineChart>
       </ChartWrapper>

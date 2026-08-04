@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import { TrendingUp, TrendingDown, Wallet, ArrowDownToLine, ArrowUpFromLine } from 'lucide-react'
 import {
-  ComposedChart, Bar, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend,
+  ComposedChart, Bar, Line, XAxis, YAxis, CartesianGrid, Legend,
   BarChart, Cell,
 } from 'recharts'
 
@@ -9,6 +9,7 @@ import KpiCard from '../../components/kpi/KpiCard'
 import StatusBadge from '../../components/badge/StatusBadge'
 import ChartWrapper from '../../components/charts/ChartWrapper'
 import TableFilterBar from '../../components/table/TableFilterBar'
+import ChartTooltip from '../../components/charts/ChartTooltip'
 import DataTable from '../../components/table/DataTable'
 import { KpiCardSkeleton, ChartSkeleton, TableSkeleton } from '../../components/ui/Skeleton'
 import { useDelayedLoading } from '../../lib/useDelayedLoading'
@@ -120,7 +121,7 @@ export default function FinancialStatusPage() {
           <CartesianGrid strokeDasharray="3 3" stroke="#e5e8ee" vertical={false} />
           <XAxis dataKey="month" tick={{ fontSize: 12 }} stroke="#6b84a8" />
           <YAxis tick={{ fontSize: 12 }} stroke="#6b84a8" />
-          <Tooltip formatter={(v) => formatCurrency(v)} />
+          <ChartTooltip formatter={(v) => formatCurrency(v)} />
           <Legend wrapperStyle={{ fontSize: 11 }} />
           <Bar dataKey="revenue" name="Revenue" fill="#818cf8" radius={[6, 6, 0, 0]} />
           <Bar dataKey="expenses" name="Expenses" fill="#f59e0b" radius={[6, 6, 0, 0]} />
@@ -134,7 +135,7 @@ export default function FinancialStatusPage() {
             <CartesianGrid strokeDasharray="3 3" stroke="#e5e8ee" horizontal={false} />
             <XAxis type="number" tick={{ fontSize: 12 }} stroke="#6b84a8" />
             <YAxis type="category" dataKey="branch" tick={{ fontSize: 12 }} stroke="#6b84a8" width={110} />
-            <Tooltip formatter={(v) => formatCurrency(v)} />
+            <ChartTooltip formatter={(v) => formatCurrency(v)} />
             <Bar dataKey="profit" name="Profit" radius={[0, 6, 6, 0]}>
               {branchProfitLoss.map((entry, i) => (
                 <Cell key={i} fill={entry.profit >= 0 ? '#22c55e' : '#ef4444'} />
@@ -148,7 +149,7 @@ export default function FinancialStatusPage() {
             <CartesianGrid strokeDasharray="3 3" stroke="#e5e8ee" vertical={false} />
             <XAxis dataKey="month" tick={{ fontSize: 12 }} stroke="#6b84a8" />
             <YAxis tick={{ fontSize: 12 }} stroke="#6b84a8" unit="%" />
-            <Tooltip formatter={(v) => `${v}%`} />
+            <ChartTooltip formatter={(v) => `${v}%`} />
             <Line type="monotone" dataKey="margin" name="Margin %" stroke="#4f46e5" strokeWidth={2.5} dot={{ r: 3 }} />
           </ComposedChart>
         </ChartWrapper>

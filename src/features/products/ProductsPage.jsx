@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import { Flame, Trophy, Star, RotateCcw } from 'lucide-react'
 import {
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend,
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Legend,
   PieChart, Pie, Cell,
 } from 'recharts'
 
@@ -10,6 +10,7 @@ import StatusBadge from '../../components/badge/StatusBadge'
 import ChartWrapper from '../../components/charts/ChartWrapper'
 import TableFilterBar from '../../components/table/TableFilterBar'
 import DataTable from '../../components/table/DataTable'
+import ChartTooltip from '../../components/charts/ChartTooltip'
 import { KpiCardSkeleton, ChartSkeleton, TableSkeleton } from '../../components/ui/Skeleton'
 import { useDelayedLoading } from '../../lib/useDelayedLoading'
 import { filterRows } from '../../lib/sorting'
@@ -117,7 +118,7 @@ export default function ProductsPage() {
               <CartesianGrid strokeDasharray="3 3" stroke="#e5e8ee" vertical={false} />
               <XAxis dataKey="name" tick={{ fontSize: 10 }} stroke="#6b84a8" interval={0} angle={-20} textAnchor="end" height={60} />
               <YAxis tick={{ fontSize: 12 }} stroke="#6b84a8" allowDecimals={false} />
-              <Tooltip />
+              <ChartTooltip />
               <Bar dataKey="bookings" fill="#4f46e5" radius={[6, 6, 0, 0]} />
             </BarChart>
           </ChartWrapper>
@@ -125,12 +126,12 @@ export default function ProductsPage() {
  
         <ChartWrapper title="Revenue Share by Category" subtitle="This period">
           <PieChart>
-            <Pie data={revenueShareByCategory} dataKey="value" nameKey="name" innerRadius={50} outerRadius={78} paddingAngle={2}>
+            <Pie data={revenueShareByCategory} dataKey="value" nameKey="name" innerRadius={50} outerRadius={78} paddingAngle={2}  stroke="none">
               {revenueShareByCategory.map((_, i) => (
                 <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />
               ))}
             </Pie>
-            <Tooltip formatter={(v) => formatCurrency(v)} />
+            <ChartTooltip formatter={(v) => formatCurrency(v)} />
           </PieChart>
         </ChartWrapper>
       </div>
@@ -140,7 +141,7 @@ export default function ProductsPage() {
           <CartesianGrid strokeDasharray="3 3" stroke="#e5e8ee" vertical={false} />
           <XAxis dataKey="name" tick={{ fontSize: 10 }} stroke="#6b84a8" interval={0} angle={-20} textAnchor="end" height={60} />
           <YAxis tick={{ fontSize: 12 }} stroke="#6b84a8" />
-          <Tooltip formatter={(v) => formatCurrency(v)} />
+          <ChartTooltip formatter={(v) => formatCurrency(v)} />
           <Legend wrapperStyle={{ fontSize: 11 }} />
           <Bar dataKey="revenue" name="Revenue" fill="#818cf8" radius={[6, 6, 0, 0]} />
           <Bar dataKey="profit" name="Profit" fill="#22c55e" radius={[6, 6, 0, 0]} />

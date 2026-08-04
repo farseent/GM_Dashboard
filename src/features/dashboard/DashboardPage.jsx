@@ -7,6 +7,7 @@ import StatusBadge from '../../components/badge/StatusBadge'
 import ChartWrapper from '../../components/charts/ChartWrapper'
 import TableFilterBar from '../../components/table/TableFilterBar'
 import DataTable from '../../components/table/DataTable'
+import ChartTooltip from '../../components/charts/ChartTooltip'
 import { KpiCardSkeleton, ChartSkeleton, TableSkeleton } from '../../components/ui/Skeleton'
 import { filterRows } from '../../lib/sorting'
 import { useDelayedLoading } from '../../lib/useDelayedLoading'
@@ -130,7 +131,7 @@ export default function DashboardPage() {
               <CartesianGrid strokeDasharray="3 3" stroke="#e5e8ee" vertical={false} />
               <XAxis dataKey="name" tick={{ fontSize: 12 }} stroke="#6b84a8" />
               <YAxis tick={{ fontSize: 12 }} stroke="#6b84a8" />
-              <Tooltip formatter={(v) => formatCurrency(v)} />
+              <ChartTooltip formatter={(v) => formatCurrency(v)} />
               <Legend wrapperStyle={{ fontSize: 12 }} />
               <Bar dataKey="revenue" name="Revenue" fill="#4f46e5" radius={[6, 6, 0, 0]} />
               <Bar dataKey="expenses" name="Expenses" fill="#f59e0b" radius={[6, 6, 0, 0]} />
