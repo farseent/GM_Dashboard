@@ -19,7 +19,7 @@ export default function Topbar({ title, onMenuClick }) {
 
       <div className="flex items-center gap-2 sm:gap-4">
         <button
-          onClick={toggleTheme}
+          onClick={(e) => toggleTheme(e)}
           className="rounded-full p-2 text-fg-muted hover:bg-surface"
           aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
         >

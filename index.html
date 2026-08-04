@@ -5,6 +5,15 @@
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>gm-dashboard</title>
+    <script>
+      // Runs before paint so the correct theme is applied immediately —
+      // without this, every load would flash light mode then animate into dark.
+      (function () {
+        var stored = localStorage.getItem('gm-dashboard-theme')
+        var isDark = stored ? stored === 'dark' : window.matchMedia('(prefers-color-scheme: dark)').matches
+        if (isDark) document.documentElement.classList.add('dark')
+      })()
+    </script>
   </head>
   <body>
     <div id="root"></div>
