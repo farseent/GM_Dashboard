@@ -136,6 +136,7 @@ export default function FinancialStatusPage() {
             <XAxis type="number" tick={{ fontSize: 12 }} stroke="#6b84a8" />
             <YAxis type="category" dataKey="branch" tick={{ fontSize: 12 }} stroke="#6b84a8" width={110} />
             <ChartTooltip formatter={(v) => formatCurrency(v)} />
+              <Legend wrapperStyle={{ fontSize: 11 }} />
             <Bar dataKey="profit" name="Profit" radius={[0, 6, 6, 0]}>
               {branchProfitLoss.map((entry, i) => (
                 <Cell key={i} fill={entry.profit >= 0 ? '#22c55e' : '#ef4444'} />
@@ -150,6 +151,7 @@ export default function FinancialStatusPage() {
             <XAxis dataKey="month" tick={{ fontSize: 12 }} stroke="#6b84a8" />
             <YAxis tick={{ fontSize: 12 }} stroke="#6b84a8" unit="%" />
             <ChartTooltip formatter={(v) => `${v}%`} />
+            <Legend wrapperStyle={{ fontSize: 11 }} />
             <Line type="monotone" dataKey="margin" name="Margin %" stroke="#4f46e5" strokeWidth={2.5} dot={{ r: 3 }} />
           </ComposedChart>
         </ChartWrapper>

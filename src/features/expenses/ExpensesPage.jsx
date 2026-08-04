@@ -137,6 +137,8 @@ export default function ExpensesPage() {
               ))}
             </Pie>
             <ChartTooltip formatter={(v) => formatCurrency(v)} />
+            <Legend wrapperStyle={{ fontSize: 11 }} />
+
           </PieChart>
         </ChartWrapper>
       </div>
@@ -146,6 +148,7 @@ export default function ExpensesPage() {
           <CartesianGrid strokeDasharray="3 3" stroke="#e5e8ee" vertical={false} />
           <XAxis dataKey="month" tick={{ fontSize: 12 }} stroke="#6b84a8" />
           <YAxis tick={{ fontSize: 12 }} stroke="#6b84a8" />
+          <Legend wrapperStyle={{ fontSize: 11 }} />
           <ChartTooltip formatter={(v) => formatCurrency(v)} />
           <Line type="monotone" dataKey="value" stroke="#ef4444" strokeWidth={2.5} dot={{ r: 3 }} />
         </LineChart>

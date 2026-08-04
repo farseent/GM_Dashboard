@@ -51,16 +51,14 @@ export function useTheme() {
     )
 
     const transition = document.startViewTransition(() => {
-      // Toggle the class synchronously here, inside the callback — not in
-      // the useEffect above — so the "new" snapshot the browser captures
-      // for the reveal animation reliably reflects the new theme, in both
-      // directions. React state is still updated so the icon/localStorage
-      // stay in sync; the effect's redundant class toggle afterward is a
-      // harmless no-op.
       document.documentElement.classList.toggle('dark', next === 'dark')
       setTheme(next)
     })
 
+    document.documentElement.classList.add('vt-active')
+    transition.finished.finally(() => {
+      document.documentElement.classList.remove('vt-active')
+    })
     transition.ready.then(() => {
       document.documentElement.animate(
         {

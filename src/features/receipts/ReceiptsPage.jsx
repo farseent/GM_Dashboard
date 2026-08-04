@@ -119,6 +119,7 @@ export default function ReceiptsPage() {
               <XAxis dataKey="date" tick={{ fontSize: 12 }} stroke="#6b84a8" />
               <YAxis tick={{ fontSize: 12 }} stroke="#6b84a8" />
               <ChartTooltip formatter={(v) => formatCurrency(v)} />
+              <Legend wrapperStyle={{ fontSize: 11 }} />
               <Area type="monotone" dataKey="value" stroke="#4f46e5" strokeWidth={2.5} fill="url(#revenueFill)" />
             </AreaChart>
           </ChartWrapper>
@@ -142,6 +143,7 @@ export default function ReceiptsPage() {
           <CartesianGrid strokeDasharray="3 3" stroke="#e5e8ee" vertical={false} />
           <XAxis dataKey="name" tick={{ fontSize: 11 }} stroke="#6b84a8" />
           <YAxis tick={{ fontSize: 12 }} stroke="#6b84a8" allowDecimals={false} />
+          <Legend wrapperStyle={{ fontSize: 11 }} />
           <ChartTooltip />
           <Bar dataKey="bookings" fill="#22c55e" radius={[6, 6, 0, 0]} />
         </BarChart>

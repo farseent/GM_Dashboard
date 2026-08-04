@@ -119,6 +119,7 @@ export default function ProductsPage() {
               <XAxis dataKey="name" tick={{ fontSize: 10 }} stroke="#6b84a8" interval={0} angle={-20} textAnchor="end" height={60} />
               <YAxis tick={{ fontSize: 12 }} stroke="#6b84a8" allowDecimals={false} />
               <ChartTooltip />
+              <Legend wrapperStyle={{ fontSize: 11 }} />
               <Bar dataKey="bookings" fill="#4f46e5" radius={[6, 6, 0, 0]} />
             </BarChart>
           </ChartWrapper>
@@ -131,6 +132,7 @@ export default function ProductsPage() {
                 <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />
               ))}
             </Pie>
+            <Legend wrapperStyle={{ fontSize: 11 }} />
             <ChartTooltip formatter={(v) => formatCurrency(v)} />
           </PieChart>
         </ChartWrapper>

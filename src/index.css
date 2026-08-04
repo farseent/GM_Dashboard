@@ -84,13 +84,13 @@ body {
    `transition` shorthand) so this never fights with more specific utility
    classes like the sidebar's `transition-transform` — class selectors win
    over the universal selector regardless of source order. */
-*,
+/* *,
 *::before,
 *::after {
   transition-property: background-color, border-color, color, fill, stroke, box-shadow;
   transition-timing-function: ease;
   transition-duration: 180ms;
-}
+} */
 
 /* Circular "reveal" effect for the theme toggle, via the View Transitions API.
    Chromium browsers get the animated wipe; everything else just uses the
@@ -107,6 +107,13 @@ body {
 }
 ::view-transition-new(root) {
   z-index: 2147483647;
+}
+
+/* index.css */
+html.vt-active *,
+html.vt-active *::before,
+html.vt-active *::after {
+  transition: none !important;
 }
 
 /* Remove focus outline from Recharts */
