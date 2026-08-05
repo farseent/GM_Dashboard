@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import Modal from '../../../components/modal/Modal'
-import { getExpenseLocations } from '../../../api/expenses'
+import { getExpenseLocations } from '../../../api/expenseAPI'
 
 const LOCATION_MODELS = ['Branch', 'Franchise']
 const FREQUENCIES = ['Daily', 'Weekly', 'Monthly', 'Yearly']
