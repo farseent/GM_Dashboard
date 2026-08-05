@@ -1,6 +1,7 @@
 import { NavLink } from 'react-router-dom'
-import { Compass, Menu, X } from 'lucide-react'
+import { Compass, Menu, X, Sun, Moon } from 'lucide-react'
 import { NAV_ITEMS } from '../constants/navigation'
+import { useTheme } from '../lib/useTheme'
 import clsx from 'clsx'
 
 /**
@@ -9,6 +10,9 @@ import clsx from 'clsx'
  * Collapses via the X button or clicking the backdrop.
  */
 export default function Sidebar({ isExpanded, onExpand, onCollapse }) {
+  const { theme, toggleTheme } = useTheme()
+  const isDark = theme === 'dark'
+
   return (
     <>
       {isExpanded && (
@@ -21,11 +25,11 @@ export default function Sidebar({ isExpanded, onExpand, onCollapse }) {
 
       <aside
         className={clsx(
-          'fixed inset-y-0 left-0 z-50 flex h-screen flex-col overflow-hidden bg-brand-950 text-white transition-[width] duration-300 ease-in-out',
-          isExpanded ? 'w-64' : 'w-0 sm:w-20'
+          'fixed inset-y-0 left-0 z-50 flex h-dvh flex-col overflow-y-auto overflow-x-hidden border-r border-white/10 bg-brand-950 text-white transition-[width] duration-300 ease-in-out',
+          isExpanded ? 'w-54' : 'w-0 sm:w-20'
         )}
       >
-        <div className={clsx('flex items-center py-6', isExpanded ? 'justify-between px-6' : 'justify-center px-2')}>
+        <div className={clsx('flex items-center py-6', isExpanded ? 'justify-between px-4' : 'justify-center px-2')}>
           <button
             onClick={onExpand}
             className="flex items-center gap-2"
@@ -44,16 +48,16 @@ export default function Sidebar({ isExpanded, onExpand, onCollapse }) {
                 isExpanded ? 'w-40 opacity-100' : 'w-0 opacity-0'
               )}
             >
-              <p className="text-sm font-semibold tracking-tight">General Manager</p>
+              <p className="text-sm font-semibold tracking-tight">Managing Director</p>
               <p className="text-[11px] text-brand-400">Operations Console</p>
             </div>
           </button>
 
-          {isExpanded && (
-            <button onClick={onCollapse} className="rounded-md p-1 text-brand-400 hover:text-white">
+          {/* {isExpanded && (
+            <button onClick={onCollapse} className="rounded-md text-brand-400 hover:text-white">
               <X className="h-5 w-5" />
             </button>
-          )}
+          )} */}
         </div>
 
         <nav className="flex-1 space-y-1 px-3">
@@ -86,13 +90,46 @@ export default function Sidebar({ isExpanded, onExpand, onCollapse }) {
           ))}
         </nav>
 
-        <div
-          className={clsx(
-            'overflow-hidden whitespace-nowrap border-t border-brand-800 px-6 py-4 transition-opacity duration-300',
-            isExpanded ? 'opacity-100' : 'opacity-0'
-          )}
-        >
-          <p className="text-[11px] text-brand-400">v2.0.0 · Mock data mode</p>
+        {/* Theme toggle — replaces the version footer */}
+        <div className={clsx('border-t border-brand-800 py-4', isExpanded ? 'px-3' : 'flex justify-center px-2')}>
+          <button
+            onClick={toggleTheme}
+            className={clsx(
+              'flex items-center rounded-lg px-3 py-2.5 text-sm font-medium text-brand-400 transition-colors duration-300 hover:bg-brand-800 hover:text-white',
+              isExpanded ? 'w-full justify-between gap-3' : 'h-10 w-10 justify-center'
+            )}
+            title={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
+            aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
+          >
+            <span className="flex items-center gap-3">
+              <span className="flex h-4 w-4 shrink-0 items-center justify-center">
+                {isDark ? <Sun className="h-4 w-4 text-amber-400 opacity-100" />: <Moon className="h-4 w-4" /> }
+              </span>
+              <span
+                className={clsx(
+                  'overflow-hidden whitespace-nowrap transition-all duration-300 ease-in-out',
+                  isExpanded ? 'w-24 opacity-100' : 'w-0 opacity-0'
+                )}
+              >
+                Dark mode
+              </span>
+            </span>
+
+            <span
+              className={clsx(
+                'relative flex h-6 shrink-0 items-center rounded-full transition-all duration-300',
+                isExpanded ? 'w-11 opacity-100' : 'w-0 opacity-0',
+                isDark ? 'bg-accent-600' : 'bg-brand-700'
+              )}
+            >
+              <span
+                className={clsx(
+                  'absolute h-4.5 w-4.5 rounded-full bg-white shadow-sm transition-transform duration-300',
+                  isDark ? 'translate-x-5.5' : 'translate-x-0.5'
+                )}
+              />
+            </span>
+          </button>
         </div>
       </aside>
     </>
