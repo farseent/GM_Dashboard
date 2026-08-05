@@ -33,9 +33,9 @@ export default function Topbar({ title, onMenuClick }) {
 
         <button className="flex items-center gap-2 rounded-lg border border-border-subtle px-2 py-1.5 hover:bg-surface sm:px-3">
           <div className="flex h-7 w-7 items-center justify-center rounded-full bg-accent-500 text-xs font-semibold text-white">
-            GM
+            MD
           </div>
-          <span className="hidden text-sm font-medium text-fg sm:inline">General Manager</span>
+          <span className="hidden text-sm font-medium text-fg sm:inline">Managing Director</span>
           <ChevronDown className="hidden h-4 w-4 text-fg-muted sm:inline" />
         </button>
       </div>
