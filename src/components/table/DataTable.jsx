@@ -9,28 +9,33 @@ import { sortRows } from '../../lib/sorting'
  * pageSize: rows per page (default 10)
  * emptyLabel: message shown when rows.length === 0
  */
-export default function DataTable({ columns, rows, pageSize = 10, emptyLabel = 'No records found' }) {
-  const [sortKey, setSortKey] = useState(null)
-  const [sortDir, setSortDir] = useState('asc')
-  const [page, setPage] = useState(1)
+export default function DataTable({ 
+  columns,
+  rows, 
+  pageSize = 10, 
+  emptyLabel = 'No records found',
+  page,
+  totalPages,
+  onPageChange,
+  totalCount,
+  serverPagination,
+  sortKey,
+  sortDir,
+  onSortChange,
+}) {
 
-  const sorted = useMemo(() => sortRows(rows, sortKey, sortDir), [rows, sortKey, sortDir])
+  const sorted = serverPagination ? rows : sortRows(rows, sortKey, sortDir)
+  const currentPage = serverPagination ? page : Math.min(page, totalPages)
+  const paginated = serverPagination ? rows : sorted.slice((currentPage - 1) * pageSize, currentPage * pageSize)
 
-  const totalPages = Math.max(1, Math.ceil(sorted.length / pageSize))
-  const currentPage = Math.min(page, totalPages)
-  const paginated = sorted.slice((currentPage - 1) * pageSize, currentPage * pageSize)
-
-  function handleSort(key) {
-    if (sortKey !== key) {
-      setSortKey(key)
-      setSortDir('asc')
-    } else if (sortDir === 'asc') {
-      setSortDir('desc')
-    } else {
-      setSortKey(null)
-      setSortDir('asc')
+  const handleSort = (key) => {
+    if (!key) return
+    let dir = 'asc'
+    if (sortKey === key && sortDir === 'asc') {
+      dir = 'desc'
     }
-    setPage(1)
+    console.log(key, dir)
+    onSortChange(key, dir)
   }
 
   return (
@@ -107,22 +112,22 @@ export default function DataTable({ columns, rows, pageSize = 10, emptyLabel = '
       {sorted.length > 0 && (
         <div className="flex items-center justify-between border-t border-border-subtle px-4 py-3 text-xs text-fg-muted">
           <span>
-            Showing {(currentPage - 1) * pageSize + 1}–{Math.min(currentPage * pageSize, sorted.length)} of{' '}
-            {sorted.length}
+            Showing {(currentPage - 1) * pageSize + 1}–
+            {Math.min(currentPage * pageSize, totalCount)} of {totalCount}
           </span>
           <div className="flex items-center gap-1">
             <button
-              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              onClick={() => onPageChange(currentPage - 1)}
               disabled={currentPage === 1}
               className="rounded-md p-1.5 hover:bg-surface disabled:opacity-30"
             >
               <ChevronLeft className="h-4 w-4" />
             </button>
             <span className="px-2">
-              Page {currentPage} of {totalPages}
+              Page {currentPage} of {serverPagination ? totalPages : totalPages}
             </span>
             <button
-              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+              onClick={() => onPageChange(currentPage + 1)}
               disabled={currentPage === totalPages}
               className="rounded-md p-1.5 hover:bg-surface disabled:opacity-30"
             >
