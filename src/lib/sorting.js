@@ -32,22 +32,26 @@ export function sortRows(rows, sortKey, sortDir = 'asc') {
  * plus an optional set of exact-match field filters.
  * fieldFilters: { status: 'Paid', branch: 'Kochi' } — 'All' / '' / undefined is ignored.
  */
-export function filterRows(rows, { search = '', searchKeys = [], fieldFilters = {} } = {}) {
+// sorting.js
+export function filterRows(rows, { search = '', searchKeys = [], fieldFilters = {}, accessors = {} } = {}) {
   let result = rows
+
+  const getValue = (row, key) =>
+    accessors[key] ? accessors[key](row) : row[key]
 
   const activeFilters = Object.entries(fieldFilters).filter(
     ([, value]) => value && value !== 'All'
   )
   if (activeFilters.length) {
     result = result.filter((row) =>
-      activeFilters.every(([key, value]) => String(row[key]) === String(value))
+      activeFilters.every(([key, value]) => String(getValue(row, key)) === String(value))
     )
   }
 
   if (search.trim()) {
     const q = search.trim().toLowerCase()
     result = result.filter((row) =>
-      searchKeys.some((key) => String(row[key] ?? '').toLowerCase().includes(q))
+      searchKeys.some((key) => String(getValue(row, key) ?? '').toLowerCase().includes(q))
     )
   }
 

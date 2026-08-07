@@ -12,6 +12,7 @@ export default function TableFilterBar({
   filters = [],
   values = {},
   onFilterChange,
+  actions
 }) {
   return (
     <div className="flex flex-wrap items-center gap-3 border-b border-border-subtle bg-surface-raised px-4 py-3">
@@ -41,6 +42,7 @@ export default function TableFilterBar({
           ))}
         </select>
       ))}
+    {actions && <div className="flex items-center rounded-lg  border-border-subtle bg-surface">{actions}</div>}
     </div>
   )
 }

@@ -1,36 +1,113 @@
 import { useEffect, useState } from 'react'
+import Select from 'react-select'
+import CreatableSelect from 'react-select/creatable'
+import { X, Settings2, Plus, DollarSign, Tag, Calendar, MapPin, FileText } from 'lucide-react'
 import Modal from '../../../components/modal/Modal'
-import { getExpenseLocations } from '../../../api/expenseAPI'
+import ManageCategoriesModal from './ManageCategoriesModal'
+import { getBranchOrFranchise, createExpenseCategory, getExpenseCategories } from '../../../api/expenseAPI'
 
-const LOCATION_MODELS = ['Branch', 'Franchise']
-const FREQUENCIES = ['Daily', 'Weekly', 'Monthly', 'Yearly']
+const LOCATION_MODEL_OPTIONS = [
+  { value: 'Branch', label: 'Branch' },
+  { value: 'Franchisee', label: 'Franchise' },
+]
+
+const FREQUENCY_OPTIONS = ['Daily', 'Weekly', 'Monthly', 'Yearly'].map((f) => ({
+  value: f,
+  label: f,
+}))
 
 const initialForm = {
   expenseName: '',
-  locationModel: 'Branch',
-  branchOrFranchise: '',
-  category: '',
-  frequency: 'Monthly',
+  locationModel: LOCATION_MODEL_OPTIONS[0],
+  branchOrFranchise: null,
+  category: null,
+  frequency: FREQUENCY_OPTIONS[2], // Monthly
   amount: '',
   notes: '',
 }
 
-export default function AddExpenseModal({ isOpen, onClose, onSubmit, categories = [] }) {
+// Converts a raw expense document (from getExpense/getExpenseById) into
+// the select-option shape this form uses. Handles the Branch/Franchisee
+// naming split (branchName vs franchiseeName) the same way the table does.
+const mapExpenseToForm = (expense) => {
+  if (!expense) return initialForm
+
+  const locationModel =
+    LOCATION_MODEL_OPTIONS.find((o) => o.value === expense.locationModel) || LOCATION_MODEL_OPTIONS[0]
+
+  const branchOrFranchise = expense.branchOrFranchise
+    ? {
+        value: expense.branchOrFranchise._id,
+        label:
+          expense.branchOrFranchise.branchName ||
+          expense.branchOrFranchise.franchiseeName ||
+          expense.branchOrFranchise.name ||
+          '',
+      }
+    : null
+
+  const category = expense.category
+    ? { value: expense.category._id, label: expense.category.name }
+    : null
+
+  const frequency = FREQUENCY_OPTIONS.find((o) => o.value === expense.frequency) || FREQUENCY_OPTIONS[2]
+
+  return {
+    expenseName: expense.expenseName || '',
+    locationModel,
+    branchOrFranchise,
+    category,
+    frequency,
+    amount: expense.amount != null ? String(expense.amount) : '',
+    notes: expense.notes || '',
+  }
+}
+
+export default function AddExpenseModal({
+  isOpen,
+  onClose,
+  onCreate,
+  onUpdate,
+  categories = [],
+  expenseToEdit = null,
+}) {
+  const isEditMode = Boolean(expenseToEdit)
+
   const [form, setForm] = useState(initialForm)
-  const [locations, setLocations] = useState([])
+  const [locationOptions, setLocationOptions] = useState([])
   const [loadingLocations, setLoadingLocations] = useState(false)
+  const [localCategories, setLocalCategories] = useState(categories)
+  const [categoryOptions, setCategoryOptions] = useState([])
+  const [creatingCategory, setCreatingCategory] = useState(false)
+  const [isManageCategoriesOpen, setIsManageCategoriesOpen] = useState(false)
   const [errors, setErrors] = useState({})
   const [submitError, setSubmitError] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
 
+  // Prefill from the expense being edited, or reset to blank for a new one
   useEffect(() => {
     if (isOpen) {
-      setForm(initialForm)
+      setForm(mapExpenseToForm(expenseToEdit))
       setErrors({})
       setSubmitError('')
     }
-  }, [isOpen])
+  }, [isOpen, expenseToEdit])
 
+  // Keep local categories in sync with whatever the parent passes in
+  useEffect(() => {
+    setLocalCategories(categories)
+  }, [categories])
+
+  // Derive select options from local categories (kept separate so
+  // create/edit flows can update localCategories without waiting on props)
+  useEffect(() => {
+    setCategoryOptions(localCategories.map((c) => ({ value: c._id, label: c.name })))
+  }, [localCategories])
+
+  // Fetches locations for the currently selected location type. In edit
+  // mode the prefilled branchOrFranchise value is kept as-is even before
+  // this resolves — react-select just needs { value, label }, it doesn't
+  // require the value to already exist in `options`.
   useEffect(() => {
     if (!isOpen) return
     let cancelled = false
@@ -38,34 +115,95 @@ export default function AddExpenseModal({ isOpen, onClose, onSubmit, categories 
     const fetchLocations = async () => {
       try {
         setLoadingLocations(true)
-        const data = await getExpenseLocations(form.locationModel)
-        if (!cancelled) setLocations(Array.isArray(data) ? data : data?.data || [])
+        const response = await getBranchOrFranchise(form.locationModel.value)
+        if (cancelled) return
+        const opts = (response.branchesOrFranchises || []).map((loc) => ({
+          value: loc._id,
+          label: loc.name,
+        }))
+        setLocationOptions(opts)
       } catch (err) {
         console.error('Failed to fetch locations:', err)
-        if (!cancelled) setLocations([])
+        if (!cancelled) setLocationOptions([])
       } finally {
         if (!cancelled) setLoadingLocations(false)
       }
     }
 
     fetchLocations()
-    return () => { cancelled = true }
+    return () => {
+      cancelled = true
+    }
   }, [isOpen, form.locationModel])
 
-  const handleChange = (field) => (e) => {
+  const handleTextChange = (field) => (e) => {
     const value = e.target.value
+    setForm((prev) => ({ ...prev, [field]: value }))
+    setErrors((prev) => ({ ...prev, [field]: undefined }))
+  }
+
+  const handleSelectChange = (field) => (option) => {
     setForm((prev) => ({
       ...prev,
-      [field]: value,
-      ...(field === 'locationModel' ? { branchOrFranchise: '' } : {}),
+      [field]: option,
+      ...(field === 'locationModel' ? { branchOrFranchise: null } : {}),
     }))
     setErrors((prev) => ({ ...prev, [field]: undefined }))
+  }
+
+  // Fires when the user types a name that doesn't match an existing
+  // category and presses enter / clicks "Create ...".
+  const handleCreateCategory = async (inputValue) => {
+    const name = inputValue.trim()
+    if (!name) return
+
+    try {
+      setCreatingCategory(true)
+      const res = await createExpenseCategory({ name })
+
+      // ⚠️ Adjust this line to match your actual API response shape —
+      // assuming it returns the created category similar to
+      // getExpenseCategories items: { _id, name }.
+      const created = res.data ?? res.category ?? res
+
+      setLocalCategories((prev) => [...prev, created])
+      setForm((prev) => ({ ...prev, category: { value: created._id, label: created.name } }))
+      setErrors((prev) => ({ ...prev, category: undefined }))
+    } catch (err) {
+      console.error('Failed to create category:', err)
+      setSubmitError(
+        err?.response?.data?.message || 'Failed to create category. Please try again.'
+      )
+    } finally {
+      setCreatingCategory(false)
+    }
+  }
+
+  // Called after ManageCategoriesModal edits a category, so this modal's
+  // dropdown reflects renamed categories without needing to reopen it.
+  const refreshCategories = async () => {
+    try {
+      const response = await getExpenseCategories()
+      const fresh = response.data || response
+      setLocalCategories(fresh)
+
+      // If the currently selected category was renamed, sync its label too
+      setForm((prev) => {
+        if (!prev.category) return prev
+        const updated = fresh.find((c) => c._id === prev.category.value)
+        if (!updated || updated.name === prev.category.label) return prev
+        return { ...prev, category: { value: updated._id, label: updated.name } }
+      })
+    } catch (err) {
+      console.error('Failed to refresh categories:', err)
+    }
   }
 
   const validate = () => {
     const next = {}
     if (!form.expenseName.trim()) next.expenseName = 'Expense name is required'
-    if (!form.branchOrFranchise) next.branchOrFranchise = `Select a ${form.locationModel.toLowerCase()}`
+    if (!form.branchOrFranchise)
+      next.branchOrFranchise = `Select a ${form.locationModel.label.toLowerCase()}`
     if (!form.category) next.category = 'Select a category'
     if (!form.amount || Number(form.amount) <= 0) next.amount = 'Enter a valid amount'
     setErrors(next)
@@ -79,159 +217,306 @@ export default function AddExpenseModal({ isOpen, onClose, onSubmit, categories 
 
     const payload = {
       expenseName: form.expenseName.trim(),
-      branchOrFranchise: form.branchOrFranchise,
-      locationModel: form.locationModel,
-      category: form.category,
-      frequency: form.frequency,
+      branchOrFranchise: form.branchOrFranchise.value,
+      locationModel: form.locationModel.value,
+      category: form.category.value,
+      frequency: form.frequency.value,
       amount: Number(form.amount),
       notes: form.notes.trim(),
     }
 
     try {
       setIsSubmitting(true)
-      await onSubmit(payload)
+      if (isEditMode) {
+        await onUpdate(expenseToEdit._id, payload)
+      } else {
+        await onCreate(payload)
+      }
       onClose()
     } catch (err) {
-      setSubmitError(err?.response?.data?.message || 'Failed to create expense. Please try again.')
+      setSubmitError(
+        err?.response?.data?.message ||
+          `Failed to ${isEditMode ? 'update' : 'create'} expense. Please try again.`
+      )
     } finally {
       setIsSubmitting(false)
     }
   }
 
-  const inputClasses =
-    'w-full rounded-md border border-border-subtle bg-surface px-3 py-2 text-sm text-fg outline-none transition-colors placeholder:text-fg-subtle focus:border-accent-500 focus:ring-2 focus:ring-accent-400/30'
-  const labelClasses = 'mb-1 block text-xs font-medium text-fg-muted'
-  const errorClasses = 'mt-1 text-xs text-negative-500'
+  // Custom select styles for dark mode support
+  const selectStyles = {
+    control: (base) => ({
+      ...base,
+      backgroundColor: 'var(--color-surface)',
+      borderColor: 'var(--color-border-subtle)',
+      color: 'var(--color-fg)',
+      '&:hover': {
+        borderColor: 'var(--color-border-subtle)',
+      },
+    }),
+    menu: (base) => ({
+      ...base,
+      backgroundColor: 'var(--color-surface-raised)',
+      borderColor: 'var(--color-border-subtle)',
+    }),
+    option: (base, state) => ({
+      ...base,
+      backgroundColor: state.isFocused ? 'var(--color-surface)' : 'transparent',
+      color: 'var(--color-fg)',
+      '&:active': {
+        backgroundColor: 'var(--color-surface)',
+      },
+    }),
+    singleValue: (base) => ({
+      ...base,
+      color: 'var(--color-fg)',
+    }),
+    placeholder: (base) => ({
+      ...base,
+      color: 'var(--color-fg-subtle)',
+    }),
+    input: (base) => ({
+      ...base,
+      color: 'var(--color-fg)',
+    }),
+  }
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Add Expense" size="md">
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div>
-          <label className={labelClasses} htmlFor="expenseName">Expense Name</label>
-          <input
-            id="expenseName"
-            type="text"
-            className={inputClasses}
-            placeholder="e.g. Office rent"
-            value={form.expenseName}
-            onChange={handleChange('expenseName')}
-          />
-          {errors.expenseName && <p className={errorClasses}>{errors.expenseName}</p>}
-        </div>
-
-        <div className="grid grid-cols-2 gap-3">
+    <>
+      <Modal isOpen={isOpen} onClose={onClose} title={isEditMode ? 'Edit Expense' : 'Add New Expense'} size="2xl">
+        <form onSubmit={handleSubmit} className="space-y-5">
+          {/* Expense Name with icon */}
           <div>
-            <label className={labelClasses} htmlFor="locationModel">Location Type</label>
-            <select
-              id="locationModel"
-              className={inputClasses}
-              value={form.locationModel}
-              onChange={handleChange('locationModel')}
-            >
-              {LOCATION_MODELS.map((m) => <option key={m} value={m}>{m}</option>)}
-            </select>
+            <label className="block text-sm font-medium text-fg-muted mb-1.5" htmlFor="expenseName">
+              Expense Name
+            </label>
+            <div className="relative">
+              <div className="absolute left-3 top-1/2 -translate-y-1/2 text-fg-subtle">
+                <FileText size={18} />
+              </div>
+              <input
+                id="expenseName"
+                type="text"
+                className="w-full rounded-xl border border-border-subtle bg-surface pl-10 pr-4 py-2.5 text-sm text-fg placeholder:text-fg-subtle transition-all focus:border-accent-500 focus:bg-surface-raised focus:outline-none focus:ring-2 focus:ring-accent-500/20"
+                placeholder="e.g. Office rent"
+                value={form.expenseName}
+                onChange={handleTextChange('expenseName')}
+              />
+            </div>
+            {errors.expenseName && (
+              <p className="mt-1.5 text-sm text-negative-500 flex items-center gap-1">
+                <span className="inline-block w-1 h-1 rounded-full bg-negative-500" />
+                {errors.expenseName}
+              </p>
+            )}
           </div>
 
-          <div>
-            <label className={labelClasses} htmlFor="branchOrFranchise">{form.locationModel}</label>
-            <select
-              id="branchOrFranchise"
-              className={inputClasses}
-              value={form.branchOrFranchise}
-              onChange={handleChange('branchOrFranchise')}
-              disabled={loadingLocations}
-            >
-              <option value="">
-                {loadingLocations ? 'Loading...' : `Select ${form.locationModel.toLowerCase()}`}
-              </option>
-              {locations.map((loc) => (
-                <option key={loc._id} value={loc._id}>{loc.name}</option>
-              ))}
-            </select>
-            {errors.branchOrFranchise && <p className={errorClasses}>{errors.branchOrFranchise}</p>}
+          {/* Location Type & Branch/Franchise */}
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-fg-muted mb-1.5">
+                <div className="flex items-center gap-1.5">
+                  <MapPin size={16} className="text-fg-subtle" />
+                  Location Type
+                </div>
+              </label>
+              <Select
+                unstyled
+                styles={selectStyles}
+                classNames={{
+                  control: () => 'w-full rounded-xl border border-border-subtle bg-surface px-3 py-2.5 text-sm text-fg transition-all focus:border-accent-500 focus:bg-surface-raised focus:ring-2 focus:ring-accent-500/20',
+                  menu: () => 'mt-1 rounded-xl border border-border-subtle bg-surface-raised shadow-lg overflow-hidden',
+                  option: () => 'px-4 py-2.5 text-sm hover:bg-surface cursor-pointer text-fg',
+                }}
+                options={LOCATION_MODEL_OPTIONS}
+                value={form.locationModel}
+                onChange={handleSelectChange('locationModel')}
+                isSearchable={false}
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-fg-muted mb-1.5">
+                {form.locationModel.label}
+              </label>
+              <Select
+                unstyled
+                styles={selectStyles}
+                classNames={{
+                  control: () => 'w-full rounded-xl border border-border-subtle bg-surface px-3 py-2.5 text-sm text-fg transition-all focus:border-accent-500 focus:bg-surface-raised focus:ring-2 focus:ring-accent-500/20',
+                  menu: () => 'mt-1 rounded-xl border border-border-subtle bg-surface-raised shadow-lg overflow-hidden',
+                  option: () => 'px-4 py-2.5 text-sm hover:bg-surface cursor-pointer text-fg',
+                }}
+                options={locationOptions}
+                value={form.branchOrFranchise}
+                onChange={handleSelectChange('branchOrFranchise')}
+                isLoading={loadingLocations}
+                isDisabled={loadingLocations}
+                placeholder={`Select ${form.locationModel.label.toLowerCase()}`}
+                noOptionsMessage={() => 'No locations found'}
+              />
+              {errors.branchOrFranchise && (
+                <p className="mt-1.5 text-sm text-negative-500 flex items-center gap-1">
+                  <span className="inline-block w-1 h-1 rounded-full bg-negative-500" />
+                  {errors.branchOrFranchise}
+                </p>
+              )}
+            </div>
           </div>
-        </div>
 
-        <div className="grid grid-cols-2 gap-3">
-          <div>
-            <label className={labelClasses} htmlFor="category">Category</label>
-            <select
-              id="category"
-              className={inputClasses}
-              value={form.category}
-              onChange={handleChange('category')}
-            >
-              <option value="">Select category</option>
-              {categories.map((cat) => (
-                <option key={cat._id} value={cat._id}>{cat.name}</option>
-              ))}
-            </select>
-            {errors.category && <p className={errorClasses}>{errors.category}</p>}
+          {/* Category & Frequency */}
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="flex items-center gap-1.5 text-sm font-medium text-fg-muted">
+                  <Tag size={16} className="text-fg-subtle" />
+                  Category
+                </label>
+                <button
+                  type="button"
+                  onClick={() => setIsManageCategoriesOpen(true)}
+                  className="flex items-center gap-1 text-xs font-medium text-accent-600 transition-all hover:text-accent-700 hover:scale-105"
+                >
+                  <Settings2 size={14} />
+                  Manage
+                </button>
+              </div>
+              <CreatableSelect
+                unstyled
+                styles={selectStyles}
+                classNames={{
+                  control: () => 'w-full rounded-xl border border-border-subtle bg-surface px-3 py-2.5 text-sm text-fg transition-all focus:border-accent-500 focus:bg-surface-raised focus:ring-2 focus:ring-accent-500/20',
+                  menu: () => 'mt-1 rounded-xl border border-border-subtle bg-surface-raised shadow-lg overflow-hidden',
+                  option: () => 'px-4 py-2.5 text-sm hover:bg-surface cursor-pointer text-fg',
+                }}
+                options={categoryOptions}
+                value={form.category}
+                onChange={handleSelectChange('category')}
+                onCreateOption={handleCreateCategory}
+                isLoading={creatingCategory}
+                isDisabled={creatingCategory}
+                placeholder="Select or add category"
+                formatCreateLabel={(input) => (
+                  <span className="flex items-center gap-2 text-fg">
+                    <Plus size={14} />
+                    Create "{input}"
+                  </span>
+                )}
+              />
+              {errors.category && (
+                <p className="mt-1.5 text-sm text-negative-500 flex items-center gap-1">
+                  <span className="inline-block w-1 h-1 rounded-full bg-negative-500" />
+                  {errors.category}
+                </p>
+              )}
+            </div>
+
+            <div>
+              <label className="flex items-center gap-1.5 text-sm font-medium text-fg-muted mb-1.5">
+                <Calendar size={16} className="text-fg-subtle" />
+                Frequency
+              </label>
+              <Select
+                unstyled
+                styles={selectStyles}
+                classNames={{
+                  control: () => 'w-full rounded-xl border border-border-subtle bg-surface px-3 py-2.5 text-sm text-fg transition-all focus:border-accent-500 focus:bg-surface-raised focus:ring-2 focus:ring-accent-500/20',
+                  menu: () => 'mt-1 rounded-xl border border-border-subtle bg-surface-raised shadow-lg overflow-hidden',
+                  option: () => 'px-4 py-2.5 text-sm hover:bg-surface cursor-pointer text-fg',
+                }}
+                options={FREQUENCY_OPTIONS}
+                value={form.frequency}
+                onChange={handleSelectChange('frequency')}
+                isSearchable={false}
+              />
+            </div>
           </div>
 
+          {/* Amount */}
           <div>
-            <label className={labelClasses} htmlFor="frequency">Frequency</label>
-            <select
-              id="frequency"
-              className={inputClasses}
-              value={form.frequency}
-              onChange={handleChange('frequency')}
-            >
-              {FREQUENCIES.map((f) => <option key={f} value={f}>{f}</option>)}
-            </select>
+            <label className="block text-sm font-medium text-fg-muted mb-1.5" htmlFor="amount">
+              Amount
+            </label>
+            <div className="relative">
+              <div className="absolute left-3 top-1/2 -translate-y-1/2 text-fg-subtle">
+                <DollarSign size={18} />
+              </div>
+              <input
+                id="amount"
+                type="number"
+                min="0"
+                step="0.01"
+                className="w-full rounded-xl border border-border-subtle bg-surface pl-10 pr-4 py-2.5 text-sm text-fg placeholder:text-fg-subtle transition-all focus:border-accent-500 focus:bg-surface-raised focus:outline-none focus:ring-2 focus:ring-accent-500/20"
+                placeholder="0.00"
+                value={form.amount}
+                onChange={handleTextChange('amount')}
+              />
+            </div>
+            {errors.amount && (
+              <p className="mt-1.5 text-sm text-negative-500 flex items-center gap-1">
+                <span className="inline-block w-1 h-1 rounded-full bg-negative-500" />
+                {errors.amount}
+              </p>
+            )}
           </div>
-        </div>
 
-        <div>
-          <label className={labelClasses} htmlFor="amount">Amount</label>
-          <input
-            id="amount"
-            type="number"
-            min="0"
-            step="0.01"
-            className={inputClasses}
-            placeholder="0.00"
-            value={form.amount}
-            onChange={handleChange('amount')}
-          />
-          {errors.amount && <p className={errorClasses}>{errors.amount}</p>}
-        </div>
+          {/* Notes */}
+          <div>
+            <label className="block text-sm font-medium text-fg-muted mb-1.5" htmlFor="notes">
+              Notes <span className="text-fg-subtle font-normal">(optional)</span>
+            </label>
+            <textarea
+              id="notes"
+              rows={3}
+              className="w-full rounded-xl border border-border-subtle bg-surface px-4 py-2.5 text-sm text-fg placeholder:text-fg-subtle transition-all focus:border-accent-500 focus:bg-surface-raised focus:outline-none focus:ring-2 focus:ring-accent-500/20 resize-none"
+              placeholder="Add any additional details..."
+              value={form.notes}
+              onChange={handleTextChange('notes')}
+            />
+          </div>
 
-        <div>
-          <label className={labelClasses} htmlFor="notes">Notes</label>
-          <textarea
-            id="notes"
-            rows={3}
-            className={inputClasses}
-            placeholder="Optional notes"
-            value={form.notes}
-            onChange={handleChange('notes')}
-          />
-        </div>
+          {/* Error message */}
+          {submitError && (
+            <div className="flex items-center gap-2 rounded-xl border border-negative-200 bg-negative-50 px-4 py-3 text-sm text-negative-600">
+              <span className="flex h-5 w-5 items-center justify-center rounded-full bg-negative-100 text-negative-600 text-xs font-bold">!</span>
+              {submitError}
+            </div>
+          )}
 
-        {submitError && (
-          <p className="rounded-md border border-negative-100 bg-negative-50 px-3 py-2 text-xs text-negative-600">
-            {submitError}
-          </p>
-        )}
+          {/* Actions */}
+          <div className="flex items-center justify-end gap-3 border-t border-border-subtle pt-5">
+            <button
+              type="button"
+              onClick={onClose}
+              className="rounded-xl px-5 py-2.5 text-sm font-medium text-fg-muted transition-all hover:bg-surface hover:text-fg"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              className="rounded-xl bg-accent-600 px-6 py-2.5 text-sm font-medium text-white shadow-sm transition-all hover:bg-accent-700 hover:shadow-md disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:shadow-none active:scale-[0.98]"
+            >
+              {isSubmitting ? (
+                <span className="flex items-center gap-2">
+                  <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+                  Saving...
+                </span>
+              ) : isEditMode ? (
+                'Update Expense'
+              ) : (
+                'Add Expense'
+              )}
+            </button>
+          </div>
+        </form>
+      </Modal>
 
-        <div className="flex justify-end gap-2 border-t border-border-subtle pt-4">
-          <button
-            type="button"
-            onClick={onClose}
-            className="rounded-md px-4 py-2 text-sm font-medium text-fg-muted transition-colors hover:bg-surface"
-          >
-            Cancel
-          </button>
-          <button
-            type="submit"
-            disabled={isSubmitting}
-            className="rounded-md bg-accent-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            {isSubmitting ? 'Saving...' : 'Add Expense'}
-          </button>
-        </div>
-      </form>
-    </Modal>
+      <ManageCategoriesModal
+        isOpen={isManageCategoriesOpen}
+        onClose={() => setIsManageCategoriesOpen(false)}
+        onUpdated={refreshCategories}
+      />
+    </>
   )
 }

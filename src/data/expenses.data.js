@@ -33,8 +33,10 @@ export const expensesKpis = {
   totalThisMonth: expenses.reduce((s, e) => s + e.amount, 0),
   largestCategory: 'Salary',
   largestCategoryAmount: expenses.filter((e) => e.category === 'Salary').reduce((s, e) => s + e.amount, 0),
-  upcomingDueCount: expenses.filter((e) => e.dueDate).length,
-  upcomingDueAmount: expenses.filter((e) => e.dueDate).reduce((s, e) => s + e.amount, 0),
+    topLocation: {
+    name: 'Kochi',
+    amount: expenses.filter((e) => e.branch === 'Kochi').reduce((s, e) => s + e.amount, 0),
+  }
 }
 
 export const monthlyByCategory = [
