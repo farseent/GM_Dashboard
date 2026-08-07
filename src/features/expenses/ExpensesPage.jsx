@@ -14,7 +14,7 @@ import ChartTooltip from '../../components/charts/ChartTooltip'
 import DataTable from '../../components/table/DataTable'
 import AddExpenseModal from './components/AddExpenseModal'
 import { KpiCardSkeleton, ChartSkeleton, TableSkeleton } from '../../components/ui/Skeleton'
-import { filterRows } from '../../lib/sorting'
+// import { filterRows } from '../../lib/sorting'
 import { useDelayedLoading } from '../../lib/useDelayedLoading'
 import { formatCurrency, formatDate } from '../../lib/formatters'
 import {
@@ -51,6 +51,10 @@ export default function ExpensesPage() {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false)
   const [editingExpense, setEditingExpense] = useState(null)
   const [loadingExpenses, setLoadingExpenses] = useState(true)
+  const [page, setPage] = useState(1)
+  const [pagination, setPagination] = useState({})
+  const [sortKey, setSortKey] = useState(null)
+  const [sortDir, setSortDir] = useState('asc')
   
   // Analytics state
   const [summary, setSummary] = useState(emptySummary)
@@ -73,25 +77,6 @@ export default function ExpensesPage() {
     return Array.from(keys)
   }, [monthlyByCategory])
 
-// --- filtered rows ---
-  const filtered = useMemo(() => {
-    let rows = expenses
-
-    return filterRows(rows, {
-      search,
-      searchKeys: ['expenseName', 'notes'],
-      fieldFilters: {
-        category: categoryFilter,
-        locationModel: locationFilter,
-        frequency: frequencyFilter,
-      },
-      // category is an object ({name, ...}), not a primitive — tell filterRows
-      // how to pull a comparable value for it
-      accessors: {
-        category: (row) => row.category?.name,
-      },
-    })
-  }, [expenses, search, categoryFilter, locationFilter, frequencyFilter])
   const handleEditClick = (expense) => {
     setEditingExpense(expense)
     setIsAddModalOpen(true)
@@ -113,7 +98,7 @@ export default function ExpensesPage() {
     { key: 'branchOrFranchise', label: 'Location', sortable: true, render: (r) => r.branchOrFranchise?.branchName || r.branchOrFranchise?.franchiseeName || "-", },
     { key: 'locationModel', label: 'Type', sortable: true, },
     { key: 'frequency', label: 'Frequency', sortable: true, },
-    { key: 'amount', label: 'Amount', sortable: true, align: 'right', render: (r) => formatCurrency(r.amount), },
+    { key: 'amount', label: 'Amount', sortable: true, render: (r) => formatCurrency(r.amount), },
     {
       key: 'actions',
       label: '',
@@ -137,19 +122,50 @@ export default function ExpensesPage() {
     fetchExpenses()
     fetchExpenseCategories()
     fetchStats()
-  }, [])
+  }, [page, search, categoryFilter, locationFilter, frequencyFilter, sortKey, sortDir])
 
-  const fetchExpenses = async () => {
-    try {
-      setLoadingExpenses(true)
-      const response = await getExpense()
-      setExpenses(response.data)
-    } catch (err) {
-      console.error("Failed to fetch expenses", err)
-    } finally {
-      setLoadingExpenses(false)
+const fetchExpenses = async () => {
+  try {
+    setLoadingExpenses(true)
+
+    const params = {
+      page,
+      limit: 10,
     }
+
+    if (search) params.search = search
+    if (categoryFilter !== 'All') params.category = categoryFilter
+    if (locationFilter !== 'All') params.locationModel = locationFilter
+    if (frequencyFilter !== 'All') params.frequency = frequencyFilter
+    
+    const sortFieldMap = {
+      category: 'category.name',
+      branchOrFranchise: 'branchOrFranchise.branchName',
+    }
+    
+    if (sortKey) {
+      params.sortField = sortFieldMap[sortKey] || sortKey
+      params.sortOrder = sortDir
+    }
+
+    const response = await getExpense(params)
+
+    if (response.success) {
+      const dataWithId = response.data.map(e => ({
+        ...e,
+        id: e._id
+      }))
+
+      setExpenses(dataWithId)
+      setPagination(response.pagination)
+    }
+
+  } catch (err) {
+    console.error("Failed to fetch expenses", err)
+  } finally {
+    setLoadingExpenses(false)
   }
+}
 
   const fetchStats = async () => {
     try {
@@ -408,18 +424,26 @@ export default function ExpensesPage() {
           if (key === 'locationModel') setLocationFilter(value)
           if (key === 'frequency') setFrequencyFilter(value)
         }}
-        actions={
-          <button
-            type="button"
-            onClick={handleResetFilters}
-            title="Reset filters"
-            className="flex h-9 w-9 items-center justify-center rounded-lg border border-border-subtle bg-surface-2 text-fg-muted transition-colors hover:border-primary/40 hover:bg-primary/10 hover:text-primary"
-          >
-            <RotateCcw size={16} />
-          </button>
-        }
+        onReset={handleResetFilters}
       />
-      <DataTable columns={columns} rows={filtered} pageSize={10} />
+      <DataTable
+        columns={columns}
+        rows={expenses}
+        page={page}
+        totalPages={pagination.totalPages}
+        totalCount={pagination.total}
+        onPageChange={setPage}
+
+        sortKey={sortKey}
+        sortDir={sortDir}
+        onSortChange={(key, dir) => {
+          setSortKey(key)
+          setSortDir(dir)
+          setPage(1)
+        }}
+
+        serverPagination
+      />
       <AddExpenseModal
         isOpen={isAddModalOpen}
         onClose={handleModalClose}
