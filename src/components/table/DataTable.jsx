@@ -29,8 +29,8 @@ export default function DataTable({
   const sorted = serverPagination ? rows : sortRows(rows, sortKey, sortDir)
   const currentPage = page || 1
   const paginated = serverPagination ? rows : sorted.slice((currentPage - 1) * pageSize, currentPage * pageSize)
-  const start = (currentPage - 1) * pageSize + 1
-  const end = start + rows.length - 1
+  const start = rows.length === 0 ? 0 : (currentPage - 1) * (pageSize ?? rows.length) + 1
+  const end = start  + rows.length - 1
   
   const handleSort = (key) => {
     if (!key) return

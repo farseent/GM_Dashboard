@@ -134,14 +134,12 @@ export default function ExpensesPage() {
     fetchExpenses()
   }, [page, search, categoryFilter, locationFilter, frequencyFilter, sortKey, sortDir])
 
+  const RECEIPTS_PAGE_SIZE = 5
   const fetchExpenses = async () => {
     try {
       setLoadingExpenses(true)
 
-      const params = {
-        page,
-        limit: 10,
-      }
+      const params = { page, limit: RECEIPTS_PAGE_SIZE }
 
       if (search) params.search = search
       if (categoryFilter !== 'All') params.category = categoryFilter
@@ -423,7 +421,7 @@ export default function ExpensesPage() {
       <DataTable
         columns={columns}
         rows={expenses}
-        pageSize={10}
+        pageSize={RECEIPTS_PAGE_SIZE}
         page={page}
         totalPages={pagination.totalPages}
         totalCount={pagination.total}
