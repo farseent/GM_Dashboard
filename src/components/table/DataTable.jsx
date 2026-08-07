@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import { ArrowUp, ArrowDown, ChevronsUpDown, ChevronLeft, ChevronRight } from 'lucide-react'
 import clsx from 'clsx'
 import { sortRows } from '../../lib/sorting'
+import { TableSkeleton } from '../ui/Skeleton'
 
 /**
  * columns: [{ key, label, sortable?: bool, align?: 'left'|'right', render?: (row) => node }]
@@ -12,7 +13,7 @@ import { sortRows } from '../../lib/sorting'
 export default function DataTable({ 
   columns,
   rows, 
-  pageSize = 10, 
+  pageSize, 
   emptyLabel = 'No records found',
   page,
   totalPages,
@@ -22,12 +23,15 @@ export default function DataTable({
   sortKey,
   sortDir,
   onSortChange,
+  loading
 }) {
 
   const sorted = serverPagination ? rows : sortRows(rows, sortKey, sortDir)
-  const currentPage = serverPagination ? page : Math.min(page, totalPages)
+  const currentPage = page || 1
   const paginated = serverPagination ? rows : sorted.slice((currentPage - 1) * pageSize, currentPage * pageSize)
-
+  const start = (currentPage - 1) * pageSize + 1
+  const end = start + rows.length - 1
+  
   const handleSort = (key) => {
     if (!key) return
     let dir = 'asc'
@@ -36,6 +40,10 @@ export default function DataTable({
     }
     console.log(key, dir)
     onSortChange(key, dir)
+  }
+
+  if (loading) {
+    return <TableSkeleton rows={5} />
   }
 
   return (
@@ -109,11 +117,10 @@ export default function DataTable({
         </table>
       </div>
 
-      {sorted.length > 0 && (
+      {rows.length > 0 && (
         <div className="flex items-center justify-between border-t border-border-subtle px-4 py-3 text-xs text-fg-muted">
           <span>
-            Showing {(currentPage - 1) * pageSize + 1}–
-            {Math.min(currentPage * pageSize, totalCount)} of {totalCount}
+            Showing {start}–{end} of {totalCount}
           </span>
           <div className="flex items-center gap-1">
             <button
