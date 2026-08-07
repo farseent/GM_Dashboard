@@ -1,4 +1,4 @@
-import { Search } from 'lucide-react'
+import { Search, RotateCcw } from 'lucide-react'
 
 /**
  * search: string, onSearchChange: fn
@@ -12,6 +12,7 @@ export default function TableFilterBar({
   filters = [],
   values = {},
   onFilterChange,
+  onReset,
   actions
 }) {
   return (
@@ -43,6 +44,17 @@ export default function TableFilterBar({
         </select>
       ))}
     {actions && <div className="flex items-center rounded-lg  border-border-subtle bg-surface">{actions}</div>}
+    
+    {onReset && (
+        <button
+          type="button"
+          onClick={onReset}
+          title="Reset filters"
+          className="flex h-9 w-9 items-center justify-center rounded-lg border border-border-subtle bg-surface-2 text-fg-muted transition-colors hover:border-primary/40 hover:bg-primary/10 hover:text-primary"
+        >
+          <RotateCcw size={16} />
+        </button>
+      )}
     </div>
   )
 }
