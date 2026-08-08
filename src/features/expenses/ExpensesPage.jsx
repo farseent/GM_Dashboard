@@ -358,31 +358,10 @@ export default function ExpensesPage() {
         </div>
       ) : (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <KpiCard
-            label="Total Expense This Month"
-            value={formatCurrency(summary.totalThisMonth)}
-            icon={Wallet}
-            subtext="all categories"
-          />
-          <KpiCard
-            label="Largest Category"
-            value={summary.largestCategory.name}
-            icon={Layers}
-            subtext={formatCurrency(summary.largestCategory.amount)}
-          />
-          <KpiCard
-            label="Top Spending Location"
-            value={summary.topLocation.name}
-            icon={MapPin}
-            subtext={formatCurrency(summary.topLocation.amount)}
-          />
-          <KpiCard
-            label="Expense Trend"
-            value={trendValue}
-            icon={trendIcon}
-            trend={trendData}
-            subtext="vs last month"
-          />
+          <KpiCard label="Total Expense This Month" value={formatCurrency(summary.totalThisMonth)} icon={Wallet} subtext="all categories"  />
+          <KpiCard label="Largest Category" value={summary.largestCategory.name} icon={Layers} subtext={formatCurrency(summary.largestCategory.amount)} />
+          <KpiCard label="Top Spending Location" value={summary.topLocation.name} icon={MapPin} subtext={formatCurrency(summary.topLocation.amount)} />
+          <KpiCard label="Expense Trend" value={trendValue} icon={trendIcon} trend={trendData} subtext="vs last month" />
         </div>
       )}
 
