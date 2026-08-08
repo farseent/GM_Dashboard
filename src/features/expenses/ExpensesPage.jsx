@@ -1,9 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Wallet, Layers, MapPin, TrendingUp, TrendingDown, Plus, Pencil } from 'lucide-react'
-import {
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, 
-  Legend, PieChart, Pie, Cell, LineChart, Line,
-} from 'recharts'
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Legend, PieChart, Pie, Cell, LineChart, Line } from 'recharts'
 
 import AddExpenseModal from './components/AddExpenseModal'
 import { LOCATION_MODEL_OPTIONS, FREQUENCY_OPTIONS } from './components/expenseOptions'
@@ -13,6 +10,7 @@ import ChartWrapper from '../../components/charts/ChartWrapper'
 import TableFilterBar from '../../components/table/TableFilterBar'
 import ChartTooltip from '../../components/charts/ChartTooltip'
 import DataTable from '../../components/table/DataTable'
+
 import { KpiCardSkeleton, ChartSkeleton, TableSkeleton } from '../../components/ui/Skeleton'
 import { formatCurrency } from '../../lib/formatters'
 import { buildCategoryColorMap, getCategoryColor } from '../../lib/chartColors'
@@ -62,96 +60,18 @@ export default function ExpensesPage() {
   const [loadingStats, setLoadingStats] = useState(true)
   const [statsError, setStatsError] = useState('')
 
-  // Category keys for the stacked bar chart are derived from whatever
-  // categories actually appear in the response — not hardcoded, since
-  // real category names (Fuel, Electricity, etc.) vary per company.
-  const categoryKeys = useMemo(() => {
-    const totals = {}
-    monthlyByCategory.forEach((row) => {
-      Object.keys(row).forEach((k) => {
-        if (k !== 'month') {
-          totals[k] = (totals[k] || 0) + (row[k] || 0)
-        }
-      })
-    })
-    return Object.keys(totals).sort((a, b) => totals[b] - totals[a])
-  }, [monthlyByCategory])
-
-  const tooltipOrder = useMemo(() => {
-    return [...categoryKeys].reverse()
-  }, [categoryKeys])
+  useEffect(() => {
+    fetchExpenses()
+  }, [page, debouncedSearch, categoryFilter, locationFilter, frequencyFilter, sortKey, sortDir])
   
-  const categoryColorMap = useMemo(() => {
-    const totals = categoryShare.map(c => ({ name: c.name, total: c.value }))
-    return buildCategoryColorMap(totals)
-  }, [categoryShare])
-
-  const MAX_SLICES = 7
-  const pieData = useMemo(() => {
-    if (categoryShare.length <= MAX_SLICES) return categoryShare
-    const sorted = [...categoryShare].sort((a, b) => b.value - a.value)
-    const top = sorted.slice(0, MAX_SLICES)
-    const rest = sorted.slice(MAX_SLICES)
-    const otherTotal = rest.reduce((sum, c) => sum + c.value, 0)
-    return otherTotal > 0 ? [...top, { name: 'Other', value: otherTotal }] : top
-  }, [categoryShare])
-
-  const handleEditClick = useCallback((expense) => {
-    setEditingExpense(expense)
-    setIsAddModalOpen(true)
-  }, [])
-
-  const handleAddClick = useCallback(() => {
-    setEditingExpense(null)
-    setIsAddModalOpen(true)
-  }, [])
-
-  const handleModalClose = useCallback(() => {
-    setIsAddModalOpen(false)
-    setEditingExpense(null)
-  }, [])
-
-  const columns = useMemo(() => [
-    { key: 'expenseName', label: 'Expense', sortable: true },
-    { key: 'category', label: 'Category', sortable: true, render: (r) => r.category?.name || '-' },
-    { key: 'branchOrFranchise', label: 'Location', sortable: true, render: (r) => r.branchOrFranchise?.branchName || r.branchOrFranchise?.franchiseeName || "-" },
-    { key: 'locationModel', label: 'Type', sortable: true },
-    { key: 'frequency', label: 'Frequency', sortable: true },
-    { key: 'amount', label: 'Amount', sortable: true, render: (r) => formatCurrency(r.amount) },
-    {
-      key: 'actions',
-      label: '',
-      sortable: false,
-      align: 'right',
-      render: (r) => (
-        <button
-          type="button"
-          onClick={() => handleEditClick(r)}
-          className="inline-flex items-center gap-1.5 rounded-lg border border-border-subtle bg-accent-600 px-3 py-1.5 text-sm font-medium text-white transition-colors hover:border-primary/40 hover:bg-primary/10 hover:text-primary"
-          title="Edit expense"
-        >
-          <Pencil size={14} />
-          <span>Edit</span>
-        </button>
-      ),
-    },
-  ], [handleEditClick])
-
   // Categories: fetch once
   useEffect(() => {
     fetchExpenseCategories()
   }, [])
 
-  // Stats: only depend on filters that actually affect the KPI/chart data
-  // (or fetch once if stats are page-global and unrelated to filters)
   useEffect(() => {
     fetchStats()
   }, [])
-
-  // Table data: depends on page, search, filters, sort
-  useEffect(() => {
-    fetchExpenses()
-  }, [page, debouncedSearch, categoryFilter, locationFilter, frequencyFilter, sortKey, sortDir])
 
   useEffect(() => {
     setPage(1)
@@ -236,11 +156,19 @@ export default function ExpensesPage() {
     }
   }
 
+  const fetchExpenseCategories = async () => {
+    try {
+      const response = await getExpenseCategories()
+      setCategories(response.data || response)
+    } catch (error) {
+      console.error("Failed to fetch expense categories:", error)
+      return []
+    }
+  }
+
   const handleCreateExpense = async (expenseData) => {
     try {
       await createExpense(expenseData)
-
-      // Refresh table + analytics so KPIs/charts reflect the new expense
       await Promise.all([fetchExpenses(), fetchStats()])
     } catch (error) {
       console.error("Failed to create expense:", error)
@@ -248,9 +176,6 @@ export default function ExpensesPage() {
     }
   }
 
-  // ⚠️ Assumes backend endpoint PUT /expense/:id exists (see updateExpense
-  // in expenseAPI.js). Currently only PATCH /expense/:id/amount is
-  // confirmed live — this will 404 until the full update route ships.
   const handleUpdateExpense = async (id, expenseData) => {
     try {
       await updateExpense(id, expenseData)
@@ -263,17 +188,31 @@ export default function ExpensesPage() {
     }
   }
 
-  const fetchExpenseCategories = async () => {
-    try {
-      const response = await getExpenseCategories()
-      setCategories(response.data || response)
-    } catch (error) {
-      console.error("Failed to fetch expense categories:", error)
-      return []
-    }
-  }
+  const handleEditClick = useCallback((expense) => {
+    setEditingExpense(expense)
+    setIsAddModalOpen(true)
+  }, [])
 
-  // --- reset handler ---
+  const handleAddClick = useCallback(() => {
+    setEditingExpense(null)
+    setIsAddModalOpen(true)
+  }, [])
+
+  const handleModalClose = useCallback(() => {
+    setIsAddModalOpen(false)
+    setEditingExpense(null)
+  }, [])
+
+  const handleCategoriesChange = useCallback((freshCategories) => {
+    setCategories(freshCategories)
+  }, [])
+
+  const handleSortChange = useCallback((key, dir) => {
+    setSortKey(key)
+    setSortDir(dir)
+    setPage(1)
+  }, [])
+
   const handleResetFilters = useCallback(() => {
     setSearch('')
     setCategoryFilter('All')
@@ -281,16 +220,72 @@ export default function ExpensesPage() {
     setFrequencyFilter('All')
   }, [])
 
+  const columns = useMemo(() => [
+    { key: 'expenseName', label: 'Expense', sortable: true },
+    { key: 'category', label: 'Category', sortable: true, render: (r) => r.category?.name || '-' },
+    { key: 'branchOrFranchise', label: 'Location', sortable: true, render: (r) => r.branchOrFranchise?.branchName || r.branchOrFranchise?.franchiseeName || "-" },
+    { key: 'locationModel', label: 'Type', sortable: true },
+    { key: 'frequency', label: 'Frequency', sortable: true },
+    { key: 'amount', label: 'Amount', sortable: true, render: (r) => formatCurrency(r.amount) },
+    {
+      key: 'actions',
+      label: '',
+      sortable: false,
+      align: 'right',
+      render: (r) => (
+        <button
+          type="button"
+          onClick={() => handleEditClick(r)}
+          className="inline-flex items-center gap-1.5 rounded-lg border border-border-subtle bg-accent-600 px-3 py-1.5 text-sm font-medium text-white transition-colors hover:border-primary/40 hover:bg-primary/10 hover:text-primary"
+          title="Edit expense"
+        >
+          <Pencil size={14} />
+          <span>Edit</span>
+        </button>
+      ),
+    },
+  ], [handleEditClick])
+
+  // Category keys for the stacked bar chart are derived from whatever
+  // categories actually appear in the response — not hardcoded, since
+  // real category names (Fuel, Electricity, etc.) vary per company.
+  const categoryKeys = useMemo(() => {
+    const totals = {}
+    monthlyByCategory.forEach((row) => {
+      Object.keys(row).forEach((k) => {
+        if (k !== 'month') {
+          totals[k] = (totals[k] || 0) + (row[k] || 0)
+        }
+      })
+    })
+    return Object.keys(totals).sort((a, b) => totals[b] - totals[a])
+  }, [monthlyByCategory])
+
+  const tooltipOrder = useMemo(() => {
+    return [...categoryKeys].reverse()
+  }, [categoryKeys])
+  
+  const categoryColorMap = useMemo(() => {
+    const totals = categoryShare.map(c => ({ name: c.name, total: c.value }))
+    return buildCategoryColorMap(totals)
+  }, [categoryShare])
+
+  const MAX_SLICES = 7
+  const pieData = useMemo(() => {
+    if (categoryShare.length <= MAX_SLICES) return categoryShare
+    const sorted = [...categoryShare].sort((a, b) => b.value - a.value)
+    const top = sorted.slice(0, MAX_SLICES)
+    const rest = sorted.slice(MAX_SLICES)
+    const otherTotal = rest.reduce((sum, c) => sum + c.value, 0)
+    return otherTotal > 0 ? [...top, { name: 'Other', value: otherTotal }] : top
+  }, [categoryShare])
+
   // Category filter still needs real names, sourced from the categories
   // state (not the current page of expenses).
   const categoryOptions = useMemo(
     () => categories.map((c) => c.name).filter(Boolean),
     [categories]
   )
-
-  const handleCategoriesChange = useCallback((freshCategories) => {
-    setCategories(freshCategories)
-  }, [])
 
   // Location & frequency are fixed enums — same source of truth AddExpenseModal uses.
   const locationOptions = useMemo(() => LOCATION_MODEL_OPTIONS, [])
@@ -305,12 +300,6 @@ export default function ExpensesPage() {
     value: trendValue,
     tone: trendDirection === 'up' ? 'negative' : 'positive',
   }), [trendDirection, trendValue])
-
-  const handleSortChange = useCallback((key, dir) => {
-    setSortKey(key)
-    setSortDir(dir)
-    setPage(1)
-  }, [])
 
   const barChartElement = useMemo(() => (
     <BarChart data={monthlyByCategory}>
@@ -356,18 +345,6 @@ export default function ExpensesPage() {
 
   return (
     <div className="space-y-6">
-
-      <div className="flex items-center justify-between">
-        <h2 className="text-lg font-semibold text-fg">Expenses</h2>
-        <button
-          onClick={handleAddClick}
-          className="flex items-center gap-1.5 rounded-md bg-indigo-600 px-3 py-2 text-sm font-medium text-white transition-colors hover:bg-indigo-700"
-        >
-          <Plus size={16} />
-          Add Expense
-        </button>
-      </div>
-
       {statsError && (
         <p className="rounded-md border border-negative-100 bg-negative-50 px-3 py-2 text-xs text-negative-600">
           {statsError}
@@ -429,6 +406,13 @@ export default function ExpensesPage() {
       {/* Table */}
       <div className="mb-3 flex items-center justify-between">
         <h3 className="text-sm font-semibold text-fg">Expense Log</h3>
+        <button
+          onClick={handleAddClick}
+          className="flex items-center gap-1.5 rounded-md bg-indigo-600 px-3 py-2 text-sm font-medium text-white transition-colors hover:bg-indigo-700"
+        >
+          <Plus size={16} />
+          Add Expense
+        </button>
       </div>
       <TableFilterBar
         search={search}
