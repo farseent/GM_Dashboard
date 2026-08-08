@@ -1,9 +1,8 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Wallet, Layers, MapPin, TrendingUp, TrendingDown, Plus, Pencil, RotateCcw  } from 'lucide-react'
 import {
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend,
-  PieChart, Pie, Cell,
-  LineChart, Line,
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, 
+  Legend, PieChart, Pie, Cell, LineChart, Line,
 } from 'recharts'
 
 import KpiCard from '../../components/kpi/KpiCard'
@@ -14,7 +13,6 @@ import ChartTooltip from '../../components/charts/ChartTooltip'
 import DataTable from '../../components/table/DataTable'
 import AddExpenseModal from './components/AddExpenseModal'
 import { KpiCardSkeleton, ChartSkeleton, TableSkeleton } from '../../components/ui/Skeleton'
-// import { filterRows } from '../../lib/sorting'
 import { useDelayedLoading } from '../../lib/useDelayedLoading'
 import { formatCurrency, formatDate } from '../../lib/formatters'
 import { buildCategoryColorMap, getCategoryColor } from '../../lib/chartColors'
@@ -29,9 +27,6 @@ import {
   getExpenseTrend,
   updateExpense,
 } from '../../api/expenseAPI'
-
-// const STACK_COLORS = ['#4f46e5', '#818cf8', '#f59e0b', '#22c55e', '#94a3b8', '#ef4444', '#0ea5e9', '#a855f7']
-// const PIE_COLORS = ['#4f46e5', '#818cf8', '#6366f1', '#f59e0b', '#22c55e', '#ef4444', '#94a3b8', '#cbd5e1']
 
 const emptySummary = {
   totalThisMonth: 0,
@@ -278,13 +273,6 @@ export default function ExpensesPage() {
     setFrequencyFilter('All')
   }
 
-  // --- optional: only show the button when a filter is actually active ---
-  // const hasActiveFilters =
-  //   search.trim() !== '' ||
-  //   categoryFilter !== 'All' ||
-  //   locationFilter !== 'All' ||
-  //   frequencyFilter !== 'All'
-  
   const categoryOptions = [
     ...new Set(
       expenses.map((e) => e.category?.name).filter(Boolean)

@@ -25,7 +25,7 @@ export default function Sidebar({ isExpanded, onExpand, onCollapse }) {
 
       <aside
         className={clsx(
-          'fixed inset-y-0 left-0 z-50 flex h-dvh flex-col overflow-y-auto overflow-x-hidden border-r border-white/10 bg-brand-950 text-white transition-[width] duration-300 ease-in-out',
+          'fixed inset-y-0 left-0 z-50 flex h-dvh flex-col overflow-y-auto overflow-x-hidden border-r border-[#232d42] bg-[#121a2c] text-white transition-[width] duration-300 ease-in-out',
           isExpanded ? 'w-54' : 'w-0 sm:w-20'
         )}
       >

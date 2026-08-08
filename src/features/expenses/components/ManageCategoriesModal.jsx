@@ -82,7 +82,7 @@ export default function ManageCategoriesModal({ isOpen, onClose, onUpdated }) {
         ) : categories.length === 0 ? (
           <p className="py-6 text-center text-sm text-fg-subtle">No categories yet.</p>
         ) : (
-          <div className="max-h-96 space-y-2 overflow-y-auto pr-1">
+          <div className="space-y-2 pr-1">
             {categories.map((cat) => (
               <div key={cat._id} className={rowClasses}>
                 {editingId === cat._id ? (
