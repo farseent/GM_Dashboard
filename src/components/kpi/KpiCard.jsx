@@ -1,3 +1,4 @@
+import { memo } from 'react'
 import clsx from 'clsx'
 import { ArrowUpRight, ArrowDownRight } from 'lucide-react'
 
@@ -14,7 +15,7 @@ const TREND_COLOR = {
  * icon: lucide icon component
  * subtext: optional small caption below the value
  */
-export default function KpiCard({ label, value, trend, icon: Icon, subtext }) {
+function KpiCard({ label, value, trend, icon: Icon, subtext }) {
   return (
     <div className="rounded-xl border border-border-subtle bg-surface-raised p-5">
       <div className="flex items-start justify-between">
@@ -49,3 +50,5 @@ export default function KpiCard({ label, value, trend, icon: Icon, subtext }) {
     </div>
   )
 }
+
+export default memo(KpiCard)

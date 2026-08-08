@@ -42,11 +42,15 @@ export default function TableFilterBar({
           className="rounded-lg border border-border-subtle bg-surface px-3 py-2 text-sm text-fg focus:border-accent-500 focus:outline-none focus:ring-1 focus:ring-accent-500"
         >
           <option value="All">{filter.label}: All</option>
-          {filter.options.map((opt) => (
-            <option key={opt} value={opt}>
-              {opt}
-            </option>
-          ))}
+          {filter.options.map((opt) => {
+            const optValue = typeof opt === 'object' ? opt.value : opt
+            const optLabel = typeof opt === 'object' ? opt.label : opt
+            return (
+              <option key={optValue} value={optValue}>
+                {optLabel}
+              </option>
+            )
+          })}
         </select>
       ))}
     {actions && <div className="flex items-center rounded-lg  border-border-subtle bg-surface">{actions}</div>}

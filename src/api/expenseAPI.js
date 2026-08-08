@@ -5,8 +5,8 @@ import api from './axios'
 // EXPENSES
 // ==============================
 
-export const getExpense = async (params) => {
-  const { data } = await api.get("/expense", {params});
+export const getExpense = async (params, signal) => {
+  const { data } = await api.get("/expense", { params, signal });
   return data;
 };
 

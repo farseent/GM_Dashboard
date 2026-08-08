@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { memo, useMemo, useState } from 'react'
 import { ArrowUp, ArrowDown, ChevronsUpDown, ChevronLeft, ChevronRight } from 'lucide-react'
 import clsx from 'clsx'
 import { sortRows } from '../../lib/sorting'
@@ -10,7 +10,7 @@ import { TableSkeleton } from '../ui/Skeleton'
  * pageSize: rows per page (default 10)
  * emptyLabel: message shown when rows.length === 0
  */
-export default function DataTable({ 
+function DataTable({ 
   columns,
   rows, 
   pageSize, 
@@ -38,7 +38,6 @@ export default function DataTable({
     if (sortKey === key && sortDir === 'asc') {
       dir = 'desc'
     }
-    console.log(key, dir)
     onSortChange(key, dir)
   }
 
@@ -131,7 +130,7 @@ export default function DataTable({
               <ChevronLeft className="h-4 w-4" />
             </button>
             <span className="px-2">
-              Page {currentPage} of {serverPagination ? totalPages : totalPages}
+              Page {currentPage} of {totalPages}
             </span>
             <button
               onClick={() => onPageChange(currentPage + 1)}
@@ -146,3 +145,5 @@ export default function DataTable({
     </div>
   )
 }
+
+export default memo(DataTable)

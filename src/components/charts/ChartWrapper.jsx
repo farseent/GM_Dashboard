@@ -1,7 +1,7 @@
 import { ResponsiveContainer } from 'recharts'
-import { useEffect, useRef, useState } from 'react'
+import { memo, useEffect, useRef, useState } from 'react'
 
-export default function ChartWrapper({
+function ChartWrapper({
   title,
   subtitle,
   actions,
@@ -73,3 +73,5 @@ export default function ChartWrapper({
     </div>
   )
 }
+
+export default memo(ChartWrapper)

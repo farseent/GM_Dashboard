@@ -1,24 +1,25 @@
-import { useEffect, useMemo, useState } from 'react'
-import { Wallet, Layers, MapPin, TrendingUp, TrendingDown, Plus, Pencil, RotateCcw  } from 'lucide-react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { Wallet, Layers, MapPin, TrendingUp, TrendingDown, Plus, Pencil } from 'lucide-react'
 import {
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, 
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, 
   Legend, PieChart, Pie, Cell, LineChart, Line,
 } from 'recharts'
 
+import AddExpenseModal from './components/AddExpenseModal'
+import { LOCATION_MODEL_OPTIONS, FREQUENCY_OPTIONS } from './components/expenseOptions'
+
 import KpiCard from '../../components/kpi/KpiCard'
-import StatusBadge from '../../components/badge/StatusBadge'
 import ChartWrapper from '../../components/charts/ChartWrapper'
 import TableFilterBar from '../../components/table/TableFilterBar'
 import ChartTooltip from '../../components/charts/ChartTooltip'
 import DataTable from '../../components/table/DataTable'
-import AddExpenseModal from './components/AddExpenseModal'
 import { KpiCardSkeleton, ChartSkeleton, TableSkeleton } from '../../components/ui/Skeleton'
-import { useDelayedLoading } from '../../lib/useDelayedLoading'
-import { formatCurrency, formatDate } from '../../lib/formatters'
+import { formatCurrency } from '../../lib/formatters'
 import { buildCategoryColorMap, getCategoryColor } from '../../lib/chartColors'
+import { useDebouncedValue } from '../../lib/useDebouncedValue'
+
 import {
   createExpense,
-  createExpenseCategory,
   getExpense,
   getExpenseCategories,
   getExpenseStatsSummary,
@@ -37,8 +38,9 @@ const emptySummary = {
 }
 
 export default function ExpensesPage() {
-  const isLoading = useDelayedLoading(500)
   const [search, setSearch] = useState('')
+  const debouncedSearch = useDebouncedValue(search, 400)
+  const abortControllerRef = useRef(null)
   const [categoryFilter, setCategoryFilter] = useState('All')
   const [locationFilter, setLocationFilter] = useState('All')
   const [frequencyFilter, setFrequencyFilter] = useState('All')
@@ -94,28 +96,28 @@ export default function ExpensesPage() {
     return otherTotal > 0 ? [...top, { name: 'Other', value: otherTotal }] : top
   }, [categoryShare])
 
-  const handleEditClick = (expense) => {
+  const handleEditClick = useCallback((expense) => {
     setEditingExpense(expense)
     setIsAddModalOpen(true)
-  }
+  }, [])
 
-  const handleAddClick = () => {
+  const handleAddClick = useCallback(() => {
     setEditingExpense(null)
     setIsAddModalOpen(true)
-  }
+  }, [])
 
-  const handleModalClose = () => {
+  const handleModalClose = useCallback(() => {
     setIsAddModalOpen(false)
     setEditingExpense(null)
-  }
+  }, [])
 
-  const columns = [
-    { key: 'expenseName', label: 'Expense', sortable: true, },
-    { key: 'category', label: 'Category', sortable: true, render: (r) => r.category?.name || '-', },
-    { key: 'branchOrFranchise', label: 'Location', sortable: true, render: (r) => r.branchOrFranchise?.branchName || r.branchOrFranchise?.franchiseeName || "-", },
-    { key: 'locationModel', label: 'Type', sortable: true, },
-    { key: 'frequency', label: 'Frequency', sortable: true, },
-    { key: 'amount', label: 'Amount', sortable: true, render: (r) => formatCurrency(r.amount), },
+  const columns = useMemo(() => [
+    { key: 'expenseName', label: 'Expense', sortable: true },
+    { key: 'category', label: 'Category', sortable: true, render: (r) => r.category?.name || '-' },
+    { key: 'branchOrFranchise', label: 'Location', sortable: true, render: (r) => r.branchOrFranchise?.branchName || r.branchOrFranchise?.franchiseeName || "-" },
+    { key: 'locationModel', label: 'Type', sortable: true },
+    { key: 'frequency', label: 'Frequency', sortable: true },
+    { key: 'amount', label: 'Amount', sortable: true, render: (r) => formatCurrency(r.amount) },
     {
       key: 'actions',
       label: '',
@@ -133,7 +135,7 @@ export default function ExpensesPage() {
         </button>
       ),
     },
-  ]
+  ], [handleEditClick])
 
   // Categories: fetch once
   useEffect(() => {
@@ -149,46 +151,64 @@ export default function ExpensesPage() {
   // Table data: depends on page, search, filters, sort
   useEffect(() => {
     fetchExpenses()
-  }, [page, search, categoryFilter, locationFilter, frequencyFilter, sortKey, sortDir])
+  }, [page, debouncedSearch, categoryFilter, locationFilter, frequencyFilter, sortKey, sortDir])
+
+  useEffect(() => {
+    setPage(1)
+  }, [debouncedSearch, categoryFilter, locationFilter, frequencyFilter])
+
+  useEffect(() => {
+    return () => {
+      abortControllerRef.current?.abort()
+    }
+  }, [])
 
   const RECEIPTS_PAGE_SIZE = 5
   const fetchExpenses = async () => {
+    // Cancel whatever request is still in flight — its response would be stale anyway
+    abortControllerRef.current?.abort()
+    const controller = new AbortController()
+    abortControllerRef.current = controller
+
     try {
       setLoadingExpenses(true)
 
       const params = { page, limit: RECEIPTS_PAGE_SIZE }
 
-      if (search) params.search = search
+      if (debouncedSearch) params.search = debouncedSearch
       if (categoryFilter !== 'All') params.category = categoryFilter
       if (locationFilter !== 'All') params.locationModel = locationFilter
       if (frequencyFilter !== 'All') params.frequency = frequencyFilter
-      
+
       const sortFieldMap = {
         category: 'category.name',
         branchOrFranchise: 'branchOrFranchise.branchName',
       }
-      
+
       if (sortKey) {
         params.sortField = sortFieldMap[sortKey] || sortKey
         params.sortOrder = sortDir
       }
 
-      const response = await getExpense(params)
-      
-      if (response.success) {
-        const dataWithId = response.data.map(e => ({
-          ...e,
-          id: e._id
-        }))
+      const response = await getExpense(params, controller.signal)
 
+      if (response.success) {
+        const dataWithId = response.data.map(e => ({ ...e, id: e._id }))
         setExpenses(dataWithId)
         setPagination(response.pagination)
       }
-
     } catch (err) {
+      if (err.code === 'ERR_CANCELED') {
+        // Expected — a newer request superseded this one, nothing to do
+        return
+      }
       console.error("Failed to fetch expenses", err)
     } finally {
-      setLoadingExpenses(false)
+      // Only clear the loading state if this request is still the current one.
+      // If it was aborted, a newer fetch's own `finally` already owns that job.
+      if (abortControllerRef.current === controller) {
+        setLoadingExpenses(false)
+      }
     }
   }
 
@@ -253,47 +273,86 @@ export default function ExpensesPage() {
     }
   }
 
-  const handleCreateExpenseCategory = async (categoryData) => {
-    try {
-      await createExpenseCategory(categoryData)
-
-      // Optional: refresh category list if you're storing it in state
-      // await fetchExpenseCategories();
-    } catch (error) {
-      console.error("Failed to create expense category:", error)
-      throw error
-    }
-  }
-
   // --- reset handler ---
-  const handleResetFilters = () => {
+  const handleResetFilters = useCallback(() => {
     setSearch('')
     setCategoryFilter('All')
     setLocationFilter('All')
     setFrequencyFilter('All')
-  }
+  }, [])
 
-  const categoryOptions = [
-    ...new Set(
-      expenses.map((e) => e.category?.name).filter(Boolean)
-    ),
-  ]
+  // Category filter still needs real names, sourced from the categories
+  // state (not the current page of expenses).
+  const categoryOptions = useMemo(
+    () => categories.map((c) => c.name).filter(Boolean),
+    [categories]
+  )
 
-  const locationOptions = [
-    ...new Set(
-      expenses.map((e) => e.locationModel).filter(Boolean)
-    ),
-  ]
+  const handleCategoriesChange = useCallback((freshCategories) => {
+    setCategories(freshCategories)
+  }, [])
 
-  const frequencyOptions = [
-    ...new Set(
-      expenses.map((e) => e.frequency).filter(Boolean)
-    ),
-  ]
+  // Location & frequency are fixed enums — same source of truth AddExpenseModal uses.
+  const locationOptions = useMemo(() => LOCATION_MODEL_OPTIONS, [])
+  const frequencyOptions = useMemo(() => FREQUENCY_OPTIONS, [])
 
   const trendDirection = summary.trendPercent >= 0 ? 'up' : 'down'
   const trendIcon = trendDirection === 'up' ? TrendingUp : TrendingDown
   const trendValue = `${summary.trendPercent >= 0 ? '+' : ''}${summary.trendPercent.toFixed(1)}%`
+
+  const trendData = useMemo(() => ({
+    direction: trendDirection,
+    value: trendValue,
+    tone: trendDirection === 'up' ? 'negative' : 'positive',
+  }), [trendDirection, trendValue])
+
+  const handleSortChange = useCallback((key, dir) => {
+    setSortKey(key)
+    setSortDir(dir)
+    setPage(1)
+  }, [])
+
+  const barChartElement = useMemo(() => (
+    <BarChart data={monthlyByCategory}>
+      <CartesianGrid strokeDasharray="3 3" stroke="#e5e8ee" vertical={false} />
+      <XAxis dataKey="month" tick={{ fontSize: 12 }} stroke="#6b84a8" />
+      <YAxis tick={{ fontSize: 12 }} stroke="#6b84a8" />
+      <ChartTooltip formatter={(v) => formatCurrency(v)} order={tooltipOrder} />
+      <Legend wrapperStyle={{ fontSize: 11 }} />
+      {categoryKeys.map((key, i) => (
+        <Bar
+          key={key}
+          dataKey={key}
+          stackId="a"
+          fill={getCategoryColor(categoryColorMap, key)}
+          radius={i === categoryKeys.length - 1 ? [6, 6, 0, 0] : 0}
+        />
+      ))}
+    </BarChart>
+  ), [monthlyByCategory, categoryKeys, tooltipOrder, categoryColorMap])
+
+  const pieChartElement = useMemo(() => (
+    <PieChart>
+      <Pie data={pieData} dataKey="value" nameKey="name" innerRadius={50} outerRadius={78} paddingAngle={2} stroke="none">
+        {pieData.map((entry, i) => (
+          <Cell key={i} fill={getCategoryColor(categoryColorMap, entry.name)} />
+        ))}
+      </Pie>
+      <ChartTooltip formatter={(v) => formatCurrency(v)} />
+      <Legend wrapperStyle={{ fontSize: 11 }} />
+    </PieChart>
+  ), [pieData, categoryColorMap])
+
+  const lineChartElement = useMemo(() => (
+    <LineChart data={expenseTrend}>
+      <CartesianGrid strokeDasharray="3 3" stroke="#e5e8ee" vertical={false} />
+      <XAxis dataKey="month" tick={{ fontSize: 12 }} stroke="#6b84a8" />
+      <YAxis tick={{ fontSize: 12 }} stroke="#6b84a8" />
+      <Legend wrapperStyle={{ fontSize: 11 }} />
+      <ChartTooltip formatter={(v) => formatCurrency(v)} />
+      <Line type="monotone" dataKey="value" stroke="#ef4444" strokeWidth={2.5} dot={{ r: 3 }} />
+    </LineChart>
+  ), [expenseTrend])
 
   return (
     <div className="space-y-6">
@@ -344,7 +403,7 @@ export default function ExpensesPage() {
             label="Expense Trend"
             value={trendValue}
             icon={trendIcon}
-            trend={{ direction: trendDirection, value: trendValue, tone: trendDirection === 'up' ? 'negative' : 'positive' }}
+            trend={trendData}
             subtext="vs last month"
           />
         </div>
@@ -354,58 +413,17 @@ export default function ExpensesPage() {
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
         <div className="lg:col-span-2">
           <ChartWrapper title="Monthly Expenses by Category" subtitle="Last 4 months, stacked">
-            {loadingStats ? (
-              <ChartSkeleton />
-            ) : (
-              <BarChart data={monthlyByCategory}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#e5e8ee" vertical={false} />
-                <XAxis dataKey="month" tick={{ fontSize: 12 }} stroke="#6b84a8" />
-                <YAxis tick={{ fontSize: 12 }} stroke="#6b84a8" />
-                <ChartTooltip formatter={(v) => formatCurrency(v)} order={tooltipOrder } />                <Legend wrapperStyle={{ fontSize: 11 }} />
-                {categoryKeys.map((key, i) => (
-                  <Bar
-                    key={key}
-                    dataKey={key}
-                    stackId="a"
-                    fill={getCategoryColor(categoryColorMap, key)}
-                    radius={i === categoryKeys.length - 1 ? [6, 6, 0, 0] : 0}
-                  />
-                ))}
-              </BarChart>
-            )}
+            {loadingStats ? <ChartSkeleton /> : barChartElement}
           </ChartWrapper>
         </div>
 
         <ChartWrapper title="Category Share" subtitle="Of total spend">
-          {loadingStats ? (
-            <ChartSkeleton height={280} />
-          ) : (
-            <PieChart>
-              <Pie data={pieData} dataKey="value" nameKey="name" innerRadius={50} outerRadius={78} paddingAngle={2} stroke="none">
-                {pieData.map((entry, i) => (
-                  <Cell key={i} fill={getCategoryColor(categoryColorMap, entry.name)} />
-                ))}
-              </Pie>
-              <ChartTooltip formatter={(v) => formatCurrency(v)} />
-              <Legend wrapperStyle={{ fontSize: 11 }} />
-            </PieChart>
-          )}
+          {loadingStats ? <ChartSkeleton /> : pieChartElement }
         </ChartWrapper>
       </div>
 
       <ChartWrapper title="Expense Trend" subtitle="Last 6 months — spot the spikes" height={240}>
-        {loadingStats ? (
-          <ChartSkeleton height={240} />
-        ) : (
-          <LineChart data={expenseTrend}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#e5e8ee" vertical={false} />
-            <XAxis dataKey="month" tick={{ fontSize: 12 }} stroke="#6b84a8" />
-            <YAxis tick={{ fontSize: 12 }} stroke="#6b84a8" />
-            <Legend wrapperStyle={{ fontSize: 11 }} />
-            <ChartTooltip formatter={(v) => formatCurrency(v)} />
-            <Line type="monotone" dataKey="value" stroke="#ef4444" strokeWidth={2.5} dot={{ r: 3 }} />
-          </LineChart>
-        )}
+        {loadingStats ? <ChartSkeleton /> : lineChartElement }
       </ChartWrapper>
 
       {/* Table */}
@@ -444,12 +462,7 @@ export default function ExpensesPage() {
         loading={loadingExpenses}
         sortKey={sortKey}
         sortDir={sortDir}
-        onSortChange={(key, dir) => {
-          setSortKey(key)
-          setSortDir(dir)
-          setPage(1)
-        }}
-
+        onSortChange={handleSortChange}
         serverPagination
       />
       <AddExpenseModal
@@ -459,6 +472,7 @@ export default function ExpensesPage() {
         onUpdate={handleUpdateExpense}
         categories={categories}
         expenseToEdit={editingExpense}
+        onCategoriesChange={handleCategoriesChange}
       />
     </div>
   )

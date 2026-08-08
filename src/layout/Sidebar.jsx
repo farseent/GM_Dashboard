@@ -52,12 +52,6 @@ export default function Sidebar({ isExpanded, onExpand, onCollapse }) {
               <p className="text-[11px] text-brand-400">Operations Console</p>
             </div>
           </button>
-
-          {/* {isExpanded && (
-            <button onClick={onCollapse} className="rounded-md text-brand-400 hover:text-white">
-              <X className="h-5 w-5" />
-            </button>
-          )} */}
         </div>
 
         <nav className="flex-1 space-y-1 px-3">

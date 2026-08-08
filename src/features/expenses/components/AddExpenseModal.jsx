@@ -5,16 +5,7 @@ import { X, Settings2, Plus, DollarSign, Tag, Calendar, MapPin, FileText } from 
 import Modal from '../../../components/modal/Modal'
 import ManageCategoriesModal from './ManageCategoriesModal'
 import { getBranchOrFranchise, createExpenseCategory, getExpenseCategories } from '../../../api/expenseAPI'
-
-const LOCATION_MODEL_OPTIONS = [
-  { value: 'Branch', label: 'Branch' },
-  { value: 'Franchisee', label: 'Franchise' },
-]
-
-const FREQUENCY_OPTIONS = ['Daily', 'Weekly', 'Monthly', 'Yearly'].map((f) => ({
-  value: f,
-  label: f,
-}))
+import { LOCATION_MODEL_OPTIONS, FREQUENCY_OPTIONS } from './expenseOptions'
 
 const initialForm = {
   expenseName: '',
@@ -70,6 +61,7 @@ export default function AddExpenseModal({
   onUpdate,
   categories = [],
   expenseToEdit = null,
+  onCategoriesChange
 }) {
   const isEditMode = Boolean(expenseToEdit)
 
@@ -186,6 +178,7 @@ export default function AddExpenseModal({
       const response = await getExpenseCategories()
       const fresh = response.data || response
       setLocalCategories(fresh)
+      onCategoriesChange?.(fresh) 
 
       // If the currently selected category was renamed, sync its label too
       setForm((prev) => {
