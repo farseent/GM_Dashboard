@@ -15,6 +15,12 @@ export default function TableFilterBar({
   onReset,
   actions
 }) {
+    const hasActiveFilters =
+    search?.trim() !== '' ||
+    Object.entries(values).some(([key, v]) => {
+      const filter = filters.find((f) => f.key === key)
+      return filter && v && v !== 'All'
+    })
   return (
     <div className="flex flex-wrap items-center gap-3 border-b border-border-subtle bg-surface-raised px-4 py-3">
       <div className="relative min-w-55 flex-1">
@@ -46,15 +52,21 @@ export default function TableFilterBar({
     {actions && <div className="flex items-center rounded-lg  border-border-subtle bg-surface">{actions}</div>}
     
     {onReset && (
-        <button
-          type="button"
-          onClick={onReset}
-          title="Reset filters"
-          className="flex h-9 w-9 items-center justify-center rounded-lg border border-border-subtle bg-surface-2 text-fg-muted transition-colors hover:border-primary/40 hover:bg-primary/10 hover:text-primary"
-        >
-          <RotateCcw size={16} />
-        </button>
-      )}
+  <button
+    type="button"
+    onClick={onReset}
+    title="Reset filters"
+    className={`
+      flex h-9 w-9 items-center justify-center rounded-lg border transition-colors
+      ${hasActiveFilters 
+        ? 'border-primary/40 bg-primary/10 text-primary hover:bg-primary/20' 
+        : 'border-border-subtle bg-surface-2 text-fg-muted hover:border-primary/40 hover:bg-primary/10 hover:text-primary'
+      }
+    `}
+  >
+    <RotateCcw size={16} />
+  </button>
+)}
     </div>
   )
 }
