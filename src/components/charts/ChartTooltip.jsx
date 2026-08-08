@@ -2,10 +2,18 @@
 
 import { Tooltip } from 'recharts'
 
-export default function ChartTooltip(props) {
+export default function ChartTooltip({ order, ...props }) {
+  // `order` = array of dataKeys in the order you want them listed
+  // (e.g. the same categoryKeys array driving the bar stack order).
+  // If not provided, falls back to Recharts' default behavior.
+  const itemSorter = order
+    ? (item) => order.indexOf(item.dataKey)
+    : undefined
+
   return (
     <Tooltip
       {...props}
+      itemSorter={itemSorter}
       contentStyle={{
         backgroundColor: 'var(--color-surface-raised)',
         border: '1px solid var(--color-border-subtle)',

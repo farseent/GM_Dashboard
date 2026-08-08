@@ -17,6 +17,7 @@ import { KpiCardSkeleton, ChartSkeleton, TableSkeleton } from '../../components/
 // import { filterRows } from '../../lib/sorting'
 import { useDelayedLoading } from '../../lib/useDelayedLoading'
 import { formatCurrency, formatDate } from '../../lib/formatters'
+import { buildCategoryColorMap, getCategoryColor } from '../../lib/chartColors'
 import {
   createExpense,
   createExpenseCategory,
@@ -29,8 +30,8 @@ import {
   updateExpense,
 } from '../../api/expenseAPI'
 
-const STACK_COLORS = ['#4f46e5', '#818cf8', '#f59e0b', '#22c55e', '#94a3b8', '#ef4444', '#0ea5e9', '#a855f7']
-const PIE_COLORS = ['#4f46e5', '#818cf8', '#6366f1', '#f59e0b', '#22c55e', '#ef4444', '#94a3b8', '#cbd5e1']
+// const STACK_COLORS = ['#4f46e5', '#818cf8', '#f59e0b', '#22c55e', '#94a3b8', '#ef4444', '#0ea5e9', '#a855f7']
+// const PIE_COLORS = ['#4f46e5', '#818cf8', '#6366f1', '#f59e0b', '#22c55e', '#ef4444', '#94a3b8', '#cbd5e1']
 
 const emptySummary = {
   totalThisMonth: 0,
@@ -68,14 +69,35 @@ export default function ExpensesPage() {
   // categories actually appear in the response — not hardcoded, since
   // real category names (Fuel, Electricity, etc.) vary per company.
   const categoryKeys = useMemo(() => {
-    const keys = new Set()
+    const totals = {}
     monthlyByCategory.forEach((row) => {
       Object.keys(row).forEach((k) => {
-        if (k !== 'month') keys.add(k)
+        if (k !== 'month') {
+          totals[k] = (totals[k] || 0) + (row[k] || 0)
+        }
       })
     })
-    return Array.from(keys)
+    return Object.keys(totals).sort((a, b) => totals[b] - totals[a])
   }, [monthlyByCategory])
+
+  const tooltipOrder = useMemo(() => {
+    return [...categoryKeys].reverse()
+  }, [categoryKeys])
+  
+  const categoryColorMap = useMemo(() => {
+    const totals = categoryShare.map(c => ({ name: c.name, total: c.value }))
+    return buildCategoryColorMap(totals)
+  }, [categoryShare])
+
+  const MAX_SLICES = 7
+  const pieData = useMemo(() => {
+    if (categoryShare.length <= MAX_SLICES) return categoryShare
+    const sorted = [...categoryShare].sort((a, b) => b.value - a.value)
+    const top = sorted.slice(0, MAX_SLICES)
+    const rest = sorted.slice(MAX_SLICES)
+    const otherTotal = rest.reduce((sum, c) => sum + c.value, 0)
+    return otherTotal > 0 ? [...top, { name: 'Other', value: otherTotal }] : top
+  }, [categoryShare])
 
   const handleEditClick = (expense) => {
     setEditingExpense(expense)
@@ -257,11 +279,11 @@ export default function ExpensesPage() {
   }
 
   // --- optional: only show the button when a filter is actually active ---
-  const hasActiveFilters =
-    search.trim() !== '' ||
-    categoryFilter !== 'All' ||
-    locationFilter !== 'All' ||
-    frequencyFilter !== 'All'
+  // const hasActiveFilters =
+  //   search.trim() !== '' ||
+  //   categoryFilter !== 'All' ||
+  //   locationFilter !== 'All' ||
+  //   frequencyFilter !== 'All'
   
   const categoryOptions = [
     ...new Set(
@@ -351,10 +373,15 @@ export default function ExpensesPage() {
                 <CartesianGrid strokeDasharray="3 3" stroke="#e5e8ee" vertical={false} />
                 <XAxis dataKey="month" tick={{ fontSize: 12 }} stroke="#6b84a8" />
                 <YAxis tick={{ fontSize: 12 }} stroke="#6b84a8" />
-                <ChartTooltip formatter={(v) => formatCurrency(v)} />
-                <Legend wrapperStyle={{ fontSize: 11 }} />
+                <ChartTooltip formatter={(v) => formatCurrency(v)} order={tooltipOrder } />                <Legend wrapperStyle={{ fontSize: 11 }} />
                 {categoryKeys.map((key, i) => (
-                  <Bar key={key} dataKey={key} stackId="a" fill={STACK_COLORS[i % STACK_COLORS.length]} radius={i === categoryKeys.length - 1 ? [6, 6, 0, 0] : 0} />
+                  <Bar
+                    key={key}
+                    dataKey={key}
+                    stackId="a"
+                    fill={getCategoryColor(categoryColorMap, key)}
+                    radius={i === categoryKeys.length - 1 ? [6, 6, 0, 0] : 0}
+                  />
                 ))}
               </BarChart>
             )}
@@ -366,9 +393,9 @@ export default function ExpensesPage() {
             <ChartSkeleton height={280} />
           ) : (
             <PieChart>
-              <Pie data={categoryShare} dataKey="value" nameKey="name" innerRadius={50} outerRadius={78} paddingAngle={2}  stroke="none">
-                {categoryShare.map((_, i) => (
-                  <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />
+              <Pie data={pieData} dataKey="value" nameKey="name" innerRadius={50} outerRadius={78} paddingAngle={2} stroke="none">
+                {pieData.map((entry, i) => (
+                  <Cell key={i} fill={getCategoryColor(categoryColorMap, entry.name)} />
                 ))}
               </Pie>
               <ChartTooltip formatter={(v) => formatCurrency(v)} />
